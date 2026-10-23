@@ -1,1 +1,1 @@
-Sitemap: https://anilyayavar.github.io/applied-audit-analytics/sitemap.xml
+Sitemap: https://anilyayavar.github.io/book2/sitemap.xml

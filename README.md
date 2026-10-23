@@ -2,9 +2,9 @@
 
 *Whole audit areas, from data to findings*, by [Anil Goyal](https://www.linkedin.com/in/anil-kumar-goyal/).
 
-**Read the book online, free, at <https://anilyayavar.github.io/applied-audit-analytics/>**
+**Read the book online, free, at <https://anilyayavar.github.io/book2/>**
 
-<a href="https://anilyayavar.github.io/applied-audit-analytics/index.html"><img src="images/cover.jpg" alt="Cover of Applied Audit Analytics with R" width="300"/></a>
+<a href="https://anilyayavar.github.io/book2/index.html"><img src="images/cover.jpg" alt="Cover of Applied Audit Analytics with R" width="300"/></a>
 
 ## About the book
 
@@ -29,8 +29,8 @@ The rendered book is written to the `docs` folder, which GitHub Pages publishes.
 
 ## Licence, disclaimer and feedback
 
-<a href="https://anilyayavar.github.io/applied-audit-analytics/">Applied Audit Analytics with R</a> by Anil Goyal is licensed under [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/). You may share and adapt it for non-commercial purposes, with credit to the author.
+<a href="https://anilyayavar.github.io/book2/">Applied Audit Analytics with R</a> by Anil Goyal is licensed under [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/). You may share and adapt it for non-commercial purposes, with credit to the author.
 
 The author works for the Government of India. The opinions expressed in the book are personal to the author, and are not to be construed as those of the Government of India. All data in the book is simulated by the author. None of it pertains to any entity handled by the author in his official capacity.
 
-Suggestions and corrections are welcome, by [email](mailto:anilyayavar@gmail.com) or through the [issues](https://github.com/anilyayavar/applied-audit-analytics/issues) of this repository.
+Suggestions and corrections are welcome, by [email](mailto:anilyayavar@gmail.com) or through the [issues](https://github.com/anilyayavar/book2/issues) of this repository.
