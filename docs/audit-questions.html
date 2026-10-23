@@ -381,7 +381,7 @@ ul.task-list li input[type="checkbox"] {
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
             <a href="./part4-schemes.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Part IV. Schemes</span></a>
+ <span class="menu-text">Part IV. Schemes and Services</span></a>
           <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
@@ -389,8 +389,14 @@ ul.task-list li input[type="checkbox"] {
       <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="./25-delays.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">9</span>&nbsp; <span class="chapter-title">Delays and Pendency</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="./23-health-scheme.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">9</span>&nbsp; <span class="chapter-title">Auditing a Health Insurance Scheme</span></span></a>
+ <span class="menu-text"><span class="chapter-number">10</span>&nbsp; <span class="chapter-title">Auditing a Health Insurance Scheme</span></span></a>
   </div>
 </li>
       </ul>
@@ -804,32 +810,101 @@ ul.task-list li input[type="checkbox"] {
 <tr class="odd">
 <td>How do I audit a health insurance scheme from start to end?</td>
 <td>Data checks, profiling and several lines of evidence</td>
-<td><a href="23-health-scheme.html" class="quarto-xref"><span>Chapter 9</span></a></td>
+<td><a href="23-health-scheme.html" class="quarto-xref"><span>Chapter 10</span></a></td>
 </tr>
 <tr class="even">
 <td>Which hospitals are flagged by several independent sources?</td>
 <td>A triangulation table</td>
-<td><a href="23-health-scheme.html#sec-ssyaudit-triangulate" class="quarto-xref"><span>Section 9.11</span></a></td>
+<td><a href="23-health-scheme.html#sec-ssyaudit-triangulate" class="quarto-xref"><span>Section 10.11</span></a></td>
 </tr>
 <tr class="odd">
 <td>Are young women billed for hysterectomy?</td>
 <td>Shares by hospital</td>
-<td><a href="23-health-scheme.html#sec-ssyaudit-hyst" class="quarto-xref"><span>Section 9.6</span></a></td>
+<td><a href="23-health-scheme.html#sec-ssyaudit-hyst" class="quarto-xref"><span>Section 10.6</span></a></td>
 </tr>
 <tr class="even">
 <td>Is the same patient admitted twice at once, or a man billed for a delivery?</td>
 <td>Consistency checks on claims</td>
-<td><a href="23-health-scheme.html#sec-ssyaudit-reliability" class="quarto-xref"><span>Section 9.2.1</span></a></td>
+<td><a href="23-health-scheme.html#sec-ssyaudit-reliability" class="quarto-xref"><span>Section 10.2.1</span></a></td>
 </tr>
 <tr class="odd">
 <td>How much money is at stake in the flagged claims?</td>
 <td>Inadmissible, at risk and exposure</td>
-<td><a href="23-health-scheme.html#sec-ssyaudit-value" class="quarto-xref"><span>Section 9.12</span></a></td>
+<td><a href="23-health-scheme.html#sec-ssyaudit-value" class="quarto-xref"><span>Section 10.12</span></a></td>
 </tr>
 <tr class="even">
 <td>How do I write a draft observation from data leads?</td>
 <td>Facts, criteria, cause, effect and recommendation</td>
-<td><a href="23-health-scheme.html#sec-ssyaudit-observation" class="quarto-xref"><span>Section 9.13</span></a></td>
+<td><a href="23-health-scheme.html#sec-ssyaudit-observation" class="quarto-xref"><span>Section 10.13</span></a></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="delays-and-service-delivery" class="level2 unnumbered">
+<h2 class="unnumbered anchored" data-anchor-id="delays-and-service-delivery">Delays and service delivery</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 51%">
+<col style="width: 27%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Audit question</th>
+<th>Technique</th>
+<th>Where</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>How long do applications, claims or grievances really take, counting those still pending?</td>
+<td>Kaplan-Meier curve, median days with interval</td>
+<td><a href="25-delays.html#sec-delay-problem" class="quarto-xref"><span>Section 9.3</span></a>, <a href="25-delays.html#sec-delay-km" class="quarto-xref"><span>Section 9.5</span></a></td>
+</tr>
+<tr class="even">
+<td>Is the data on dates fit for measuring delay?</td>
+<td>Missing and impossible dates, same-day decisions, ageing, month-end bunching</td>
+<td><a href="25-delays.html#sec-delay-checks" class="quarto-xref"><span>Section 9.4</span></a></td>
+</tr>
+<tr class="odd">
+<td>Which districts or offices are slower, and is the difference real?</td>
+<td>Curves by group, log-rank test, office table</td>
+<td><a href="25-delays.html#sec-delay-compare" class="quarto-xref"><span>Section 9.6</span></a></td>
+</tr>
+<tr class="even">
+<td>What share is decided within the notified time limit, and how many pending cases are already past it?</td>
+<td>Survival curve read at the limit, ageing of pending cases</td>
+<td><a href="25-delays.html#sec-delay-limit" class="quarto-xref"><span>Section 9.7</span></a></td>
+</tr>
+<tr class="odd">
+<td>What drives delay?</td>
+<td>Cox model, hazard ratios, check with <code>cox.zph()</code></td>
+<td><a href="25-delays.html#sec-delay-cox" class="quarto-xref"><span>Section 9.8</span></a></td>
+</tr>
+<tr class="even">
+<td>Is the clock being reset by closing and reopening cases?</td>
+<td>Self-join on the reopened-from link, chains of applications</td>
+<td><a href="25-delays.html#sec-delay-reopen" class="quarto-xref"><span>Section 9.9.1</span></a>, <a href="25-delays.html#sec-delay-case-reset" class="quarto-xref"><span>Section 9.13</span></a></td>
+</tr>
+<tr class="odd">
+<td>Are cases disposed of by transferring them?</td>
+<td>Share and day of transfer by office, portal count against audit count</td>
+<td><a href="25-delays.html#sec-delay-transfer" class="quarto-xref"><span>Section 9.9.2</span></a></td>
+</tr>
+<tr class="even">
+<td>Are disposals bunched just under the time limit?</td>
+<td>Histogram of days to decision, decisions per day around the limit</td>
+<td><a href="25-delays.html#sec-delay-underlimit" class="quarto-xref"><span>Section 9.9.3</span></a></td>
+</tr>
+<tr class="odd">
+<td>Does a district look fast only because its slow cases are still pending?</td>
+<td>Closed-case average against survival figures</td>
+<td><a href="25-delays.html#sec-delay-case-district" class="quarto-xref"><span>Section 9.12</span></a></td>
+</tr>
+<tr class="even">
+<td>Which offices carry the most delay flags?</td>
+<td>Counting flags per office</td>
+<td><a href="25-delays.html#sec-delay-risk" class="quarto-xref"><span>Section 9.11</span></a></td>
 </tr>
 </tbody>
 </table>
@@ -1351,7 +1426,7 @@ ul.task-list li input[type="checkbox"] {
 <nav class="page-navigation">
   <div class="nav-page nav-page-previous">
       <a href="./23-health-scheme.html" class="pagination-link" aria-label="Auditing a Health Insurance Scheme">
-        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-number">9</span>&nbsp; <span class="chapter-title">Auditing a Health Insurance Scheme</span></span>
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-number">10</span>&nbsp; <span class="chapter-title">Auditing a Health Insurance Scheme</span></span>
       </a>          
   </div>
   <div class="nav-page nav-page-next">

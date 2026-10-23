@@ -22,7 +22,7 @@ The book has four parts.
 | [**I. Accounts**](part1-accounts.qmd) | Journal entry testing, and reconciliation of records that should agree |
 | [**II. Procurement and Payments**](part2-procurement.qmd) | Red flags in tendering, screens and models for bid rigging, and payables from the vendor master to the payment |
 | [**III. Pay and Revenue**](part3-pay-revenue.qmd) | Payroll and pensions, and revenue and tax |
-| [**IV. Schemes**](part4-schemes.qmd) | A health insurance scheme audited from start to end |
+| [**IV. Schemes and Services**](part4-schemes.qmd) | Delays and pendency in public services, and a health insurance scheme audited from start to end |
 
 : The four parts of the book {#tbl-parts}
 

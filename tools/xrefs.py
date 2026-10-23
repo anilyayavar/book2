@@ -59,3 +59,28 @@ def rewrite(files, ids, nums, base):
         s = "".join(x if x.startswith("```") else REF.sub(sub, x) for x in parts)
         open(p, "w", encoding="utf-8", newline="").write(s.replace("\n", nl))
     return count, missing
+
+LINK = re.compile(r"\[(Chapter|Section|Appendix|Figure|Table) ([0-9A-Z.]+)\]\((https://[^)\s]+)\)")
+
+def relink(files, nums, base):
+    """Refresh the text of existing links into another book after its numbers change."""
+    by_href = {href: text for href, text in nums.values()}
+    changed = 0; missing = set()
+    for p in files:
+        raw = open(p, encoding="utf-8").read()
+        def sub(m):
+            nonlocal changed
+            url = m.group(3)
+            if not url.startswith(base):
+                return m.group(0)
+            href = url[len(base):]
+            if href not in by_href:
+                missing.add(href); return m.group(0)
+            new = f"[{by_href[href]}]({url})"
+            if new != m.group(0):
+                changed += 1
+            return new
+        s = LINK.sub(sub, raw)
+        if s != raw:
+            open(p, "w", encoding="utf-8", newline="").write(s)
+    return changed, missing

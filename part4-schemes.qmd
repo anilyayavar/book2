@@ -1,8 +1,16 @@
-# Part IV. Schemes {.unnumbered}
+# Part IV. Schemes and Services {.unnumbered}
+
+Citizens wait for certificates, licences, pensions and replies to grievances. The first chapter of this part measures how long they wait, counting the cases still pending, and looks for signs that the clock is being managed rather than the work done.
 
 The book ends with a whole scheme audited from start to end. The chapter gathers what the first book found about one health insurance scheme, and builds a case from several independent sources.
 
 :::: {.chapter-cards}
+::: {.chapter-card}
+@sec-delays
+
+Delay in a State's services portal measured with survival analysis, counting pending cases correctly, with signs that the clock is being managed by reopening, transferring or back-dating.
+:::
+
 ::: {.chapter-card}
 @sec-ssyaudit
 

@@ -1,0 +1,1183 @@
+```{r}
+#| include: false
+source("_common.R")
+```
+
+# Delays and Pendency {#sec-delays}
+
+A State has a law that guarantees citizens certain services within a fixed time. A caste certificate, a trade licence or a water connection is applied for on a portal, and the office must decide within the notified time. The portal reports that most applications were disposed of in about two weeks. The audit is asked to check whether the State keeps its promise. The first instinct is to take the applications closed during the year and average the days each took. That figure looks reassuring. But it leaves out every case still pending on the cut-off date, and those are the slowest cases of all. A district that has quietly stopped clearing its difficult cases can look as fast as the best one.
+
+Performance audits ask this question again and again, of claims, grievances, pension cases, refunds, information requests, court cases and projects. This chapter shows how to answer it without being misled by the pending cases. It uses **survival analysis**, also called **time-to-event analysis**. The method came from medical research, where the event was the death of a patient and the question was how long patients survived. Here the event is happier. It is "the case was disposed of". The same mathematics handles a case that is still open on the cut-off date, just as it handled a patient still alive at the end of a study.
+
+The chapter starts with checks of the dates. It then draws the **Kaplan-Meier** curve, compares districts and offices, measures the share decided within the time limit, and looks briefly at what drives delay with a **Cox model**. Finally it looks for signs that the clock is being managed rather than the work done.
+
+::: {.callout-note collapse="true"}
+## Packages for this chapter
+
+This chapter uses `tidyverse`, `survival` and `broom`. The `survival` package comes with R. If the others are missing, install them with the command below. @sec-packages-install lists the packages of every chapter.
+
+```r
+install.packages(c("tidyverse", "broom"))
+```
+:::
+
+**Prerequisites**
+
+```{r}
+#| message: false
+#| warning: false
+library(tidyverse)
+library(survival)
+library(broom)
+```
+
+## Where time is lost {#sec-delay-cycle}
+
+A service delivered on time leaves a simple trail. An application is received, it may be transferred or returned, and in the end it is approved or rejected. Each step has a date, and each date can be checked.
+
+| Record | What it holds | What can go wrong |
+|------------------|------------------|--------------------------------------|
+| Application register | Every application, with its number, office, service and date of receipt | Applications not entered, or entered late, so the clock starts late |
+| Disposal record | The decision and its date | Dates missing, impossible, back-dated, or bunched just under the limit |
+| Status | Disposed, rejected, transferred or pending | A transfer or a rejection counted as a disposal when nothing was done |
+| Links between applications | Which application continues an earlier one | A case closed and reopened under a new number, so its clock starts again |
+| Notified time limits | The days allowed for each service | Limits not known to the office, or measured from the wrong date |
+
+: Records of a time-bound service, and what can go wrong {#tbl-delay-records}
+
+The control is simple. Every application should be decided within the time allowed, counted from the day it was received. An application that waits longer should be visible as pending, not hidden.
+
+## Our data, a year of a State's services portal {#sec-delay-data}
+
+Our auditee is the services portal of an imaginary State. Eight districts run seventeen offices. Each district has a *Sadar* office at its headquarters and a *Tehsil* office, and Sonpur also has a small office in its hills. The portal takes five kinds of application. These are caste certificates, pension sanctions, trade licences, water connections and grievances. We have every application received in 2024-25, with the cut-off date of 31 March 2025. All names and numbers are made up. There is one table, `applications`, with one row per application.
+
+- `id` is the application number given by the portal.
+- `district`, `office` and `service` say where it was filed and for what.
+- `received` and `disposed` are the dates of receipt and decision. `disposed` is empty for a pending case.
+- `status` is *disposed* (approved), *rejected*, *transferred* (sent to another office) or *pending*.
+- `reopened_from` holds the number of an earlier application that this one continues, when the portal knows of one.
+
+In our example the State has notified **30 days** for every service. This is an illustrative norm for this example only. Real laws set a different limit for each service, sometimes counted in working days. In real work, apply the actual limits notified by your government.
+
+Most of the data is routine. Caste certificates are quick, and some are issued over the counter on the same day. Pension cases take longer. A few cases in every office are genuinely complex, or wait for the applicant to supply a document, and take months. Applications for caste certificates surge in June and July, when students seek admission, and take longer then. Cases received just before a festival holiday wait a few days more. Some applicants are rejected for want of documents and apply again weeks later. A few applications reach the wrong office and are transferred within days. Into this, these cases have been planted.
+
+1. **A district that looks fast but is not.** In Dhaulagarh, a large share of cases simply stop moving. Its closed cases look as quick as anyone's, because the slow ones are still pending.
+2. **Disposals bunched under the limit.** Trade licences that would have taken five or six weeks are recorded as decided on day 28, 29 or 30.
+3. **The clock reset.** The Kesargaon Sadar office rejects slow cases just before the limit, and the same case comes back within days under a new number.
+4. **Disposal by transfer.** The Motinagar Tehsil office transfers many of its slow cases to another office just before the limit, and counts them as disposed of.
+5. **Date errors.** A few disposal dates fall before the date of receipt, and a few are missing.
+
+Let us build the data.
+
+```{r}
+#| code-fold: true
+#| code-summary: "Code to create the services portal data"
+set.seed(2503)
+
+fy_start <- as.Date("2024-04-01")
+cutoff   <- as.Date("2025-03-31")
+
+offices <- tribble(
+  ~district,    ~office,             ~weight,
+  "Amarpur",    "Amarpur Sadar",      1.1,
+  "Amarpur",    "Amarpur Tehsil",     0.8,
+  "Belkheda",   "Belkheda Sadar",     1.0,
+  "Belkheda",   "Belkheda Tehsil",    0.7,
+  "Chandanpur", "Chandanpur Sadar",   1.2,
+  "Chandanpur", "Chandanpur Tehsil",  0.8,
+  "Dhaulagarh", "Dhaulagarh Sadar",   1.0,
+  "Dhaulagarh", "Dhaulagarh Tehsil",  0.8,
+  "Kesargaon",  "Kesargaon Sadar",    1.0,
+  "Kesargaon",  "Kesargaon Tehsil",   0.7,
+  "Lakhanpur",  "Lakhanpur Sadar",    1.1,
+  "Lakhanpur",  "Lakhanpur Tehsil",   0.7,
+  "Motinagar",  "Motinagar Sadar",    0.9,
+  "Motinagar",  "Motinagar Tehsil",   0.8,
+  "Sonpur",     "Sonpur Sadar",       1.0,
+  "Sonpur",     "Sonpur Tehsil",      0.7,
+  "Sonpur",     "Sonpur Hills",       0.04)
+district_speed <- c(Amarpur = 0.9, Belkheda = 1.0, Chandanpur = 0.85, Dhaulagarh = 0.85,
+                    Kesargaon = 1.05, Lakhanpur = 0.95, Motinagar = 1.1, Sonpur = 1.0)
+
+services <- tribble(
+  ~service,            ~share, ~median_days, ~reject_p,
+  "Caste certificate",  0.30,   9,            0.08,
+  "Pension sanction",   0.12,   24,           0.10,
+  "Trade licence",      0.16,   21,           0.12,
+  "Water connection",   0.17,   17,           0.10,
+  "Grievance",          0.25,   13,           0.15)
+
+# ---- Applications received during the year ----
+n0 <- 7600
+days_all <- seq(fy_start, cutoff, by = "day")
+pick_day <- function(svc) {
+  w <- rep(1, length(days_all))
+  w[wday(days_all) == 1] <- 0.35                      # fewer on Sundays
+  if (svc == "Caste certificate") {                   # admission season
+    w[month(days_all) %in% 6:7] <- w[month(days_all) %in% 6:7] * 3.2
+  }
+  sample(days_all, 1, prob = w)
+}
+apps <- tibble(service = sample(services$service, n0, TRUE, prob = services$share))
+apps$received <- as.Date(map_dbl(apps$service, pick_day))
+apps <- apps |>
+  mutate(office = sample(offices$office, n(), TRUE, prob = offices$weight),
+         district = offices$district[match(office, offices$office)]) |>
+  left_join(services, by = "service")
+
+# Festival and national holidays delay cases received in the week before
+holidays <- as.Date(c("2024-08-15", "2024-10-12", "2024-11-01", "2024-11-02",
+                      "2025-01-26", "2025-03-14"))
+near_holiday <- function(d) map_lgl(d, \(x) any(holidays - x >= 0 & holidays - x <= 6))
+
+# ---- Days each case would take, if we could wait for all of them ----
+apps <- apps |>
+  mutate(peak = service == "Caste certificate" & month(received) %in% 6:7,
+         rejected = runif(n()) < reject_p,
+         mu = log(median_days * district_speed[district] * if_else(peak, 2.0, 1) *
+                    if_else(rejected, 0.7, 1)),
+         t = rlnorm(n(), mu, 0.55),
+         t = t + if_else(near_holiday(received), 4, 0),
+         # Genuinely complex cases, in every office (innocent)
+         complex = runif(n()) < 0.035,
+         t = t + if_else(complex, runif(n(), 50, 220), 0),
+         # Planted. In Dhaulagarh, almost half the cases stop moving
+         stuck = district == "Dhaulagarh" & runif(n()) < 0.46,
+         t = if_else(stuck, rlnorm(n(), log(600), 0.25), t),
+         # A small hill office, slower and with few cases
+         t = if_else(office == "Sonpur Hills", t * 1.8, t),
+         t = pmax(0, round(t)),
+         # Some caste certificates issued over the counter (innocent)
+         t = if_else(service == "Caste certificate" & runif(n()) < 0.04, 0, t),
+         key = row_number(), parent = NA_integer_)
+
+# ---- Transfers ----
+apps <- apps |>
+  mutate(transfer = runif(n()) < 0.02,                 # wrong office, sent on quickly
+         t = if_else(transfer, sample(1:6, n(), TRUE), t),
+         # Planted. Motinagar Tehsil transfers slow cases just before the limit
+         late_tr = office == "Motinagar Tehsil" & !transfer & t > 22 & runif(n()) < 0.75,
+         transfer = transfer | late_tr,
+         t = if_else(late_tr, sample(22:29, n(), TRUE), t))
+
+# ---- Planted. Trade licences recorded as decided just under the limit ----
+apps <- apps |>
+  mutate(bunched = service == "Trade licence" & !transfer & !complex & t > 30 & t <= 75 &
+           runif(n()) < 0.65,
+         t = if_else(bunched, sample(c(28, 29, 30), n(), TRUE, prob = c(0.15, 0.4, 0.45)), t))
+
+# ---- Planted. Kesargaon Sadar rejects slow cases and reopens them under a new number ----
+reset <- apps |> filter(office == "Kesargaon Sadar", !transfer, t > 26, runif(n()) < 0.8)
+next_key <- max(apps$key)
+chain_rows <- list()
+for (k in seq_len(nrow(reset))) {
+  row <- reset[k, ]
+  remaining <- row$t; cur <- row$received; parent <- NA_integer_; key <- row$key; first <- TRUE
+  out <- list()
+  while (remaining > 26 && (first || runif(1) < 0.8)) {
+    close <- sample(25:29, 1); gap <- sample(0:3, 1)
+    out[[length(out) + 1]] <- tibble(key = key, parent = parent, received = cur, t = close,
+                                     reset_closed = TRUE)
+    parent <- key; next_key <- next_key + 1; key <- next_key
+    cur <- cur + close + gap
+    remaining <- max(remaining - close - gap, sample(3:20, 1))
+    first <- FALSE
+  }
+  out[[length(out) + 1]] <- tibble(key = key, parent = parent, received = cur, t = remaining,
+                                   reset_closed = FALSE)
+  chain_rows[[k]] <- bind_rows(out) |>
+    mutate(service = row$service, office = row$office, district = row$district,
+           rejected = if_else(reset_closed, TRUE, row$rejected),
+           transfer = FALSE, bunched = FALSE)
+}
+chain <- bind_rows(chain_rows)
+apps <- apps |> mutate(reset_closed = FALSE) |> filter(!key %in% reset$key)
+
+# ---- Applicants who apply again after a rejection (innocent) ----
+again <- apps |>
+  filter(rejected, !transfer, runif(n()) < 0.12) |>
+  mutate(parent = key,
+         received = received + t + sample(7:90, n(), TRUE),
+         rejected = runif(n()) < reject_p,
+         t = round(rlnorm(n(), log(median_days * district_speed[district]), 0.55)),
+         transfer = FALSE, bunched = FALSE, reset_closed = FALSE)
+again$key <- next_key + seq_len(nrow(again))
+
+# ---- Apply the cut-off date ----
+all_apps <- bind_rows(apps, chain, again) |>
+  filter(received <= cutoff) |>
+  mutate(status = case_when(transfer ~ "transferred",
+                            rejected | reset_closed ~ "rejected",
+                            TRUE ~ "disposed"),
+         disposed = received + t,
+         # Offices are closed on Sundays. Bunched cases go back a day, others forward
+         disposed = case_when(wday(disposed) != 1 ~ disposed,
+                              bunched ~ disposed - 1,
+                              TRUE ~ disposed + 1),
+         status = if_else(disposed > cutoff, "pending", status),
+         disposed = if_else(status == "pending", as.Date(NA), disposed)) |>
+  arrange(received, key) |>
+  mutate(id = sprintf("PS%05d", row_number()))
+all_apps$reopened_from <- all_apps$id[match(all_apps$parent, all_apps$key)]
+
+# What an auditor never sees, the days each case would take in the end
+truth <- all_apps |>
+  filter(status != "transferred") |>
+  select(id, district, true_days = t)
+
+# ---- Planted. Date errors ----
+e1 <- sample(which(all_apps$status %in% c("disposed", "rejected") &
+                     all_apps$received >= as.Date("2025-01-01")), 5)
+all_apps$disposed[e1] <- all_apps$disposed[e1] - years(1)          # wrong year typed
+e2 <- sample(setdiff(which(all_apps$status == "disposed"), e1), 2)
+all_apps$disposed[e2] <- all_apps$received[e2] - sample(2:9, 2)
+e3 <- sample(setdiff(which(all_apps$status == "disposed" &
+                             all_apps$disposed < as.Date("2025-02-01")), c(e1, e2)), 4)
+all_apps$disposed[e3] <- NA                                         # date never entered
+
+applications <- all_apps |>
+  select(id, district, office, service, received, disposed, status, reopened_from)
+
+rm(list = setdiff(ls(), c("applications", "truth", "cutoff")))
+```
+
+```{r}
+#| include: false
+big <- function(x) format(x, big.mark = ",")
+fdate <- function(d) sub("^0", "", format(d, "%d %B %Y"))
+words <- c("no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten")
+num <- function(n) if (n <= 10) words[n + 1] else as.character(n)
+Num <- function(n) str_to_sentence(num(n))
+pct <- function(x, d = 0) round(100 * x, d)
+and_list <- function(x) if (length(x) <= 1) x else paste(paste(x[-length(x)], collapse = ", "), "and", x[length(x)])
+```
+
+Let us look at the table.
+
+```{r}
+glimpse(applications)
+applications |>
+  count(status)
+```
+
+```{r}
+#| include: false
+n_apps <- nrow(applications)
+n_pend <- sum(applications$status == "pending")
+n_reop <- sum(!is.na(applications$reopened_from))
+```
+
+There are `r big(n_apps)` applications. Of these, `r big(n_pend)` were pending on the cut-off date. `id` is the key, and `reopened_from` points back to another `id` in the same table. So the table can be joined to itself, to follow a case through its numbers. In all, `r big(n_reop)` applications carry such a link.
+
+The code also kept one more table, `truth`. It holds the number of days each case would take in the end, if we could wait as long as needed. An auditor never has this. We use it only to show how close each method comes to the truth.
+
+::: callout-tip
+## Audit tip, the data to request
+
+Ask for **every application received** in the period, with all its dates, and not only the cases disposed of. The pending cases matter most, and so do those received before the period and still pending at its start. Ask for the status and date of every step, including returns, transfers and rejections. Ask how the portal links an application to an earlier one, and for that link field. Ask for the **notified time limits** of each service, with the date from which each applied and whether they count calendar or working days. Ask for the list of holidays. Note the cut-off date of the extract, and who ran it.
+:::
+
+## The problem with averages of closed cases {#sec-delay-problem}
+
+Let us start with six imaginary applications, received on the same day. We look at them 20 days later.
+
+```{r}
+toy <- tibble(case   = c("A", "B", "C", "D", "E", "F"),
+              days   = c(4, 7, 9, 12, 20, 20),
+              closed = c(TRUE, TRUE, TRUE, TRUE, FALSE, FALSE))
+toy
+```
+
+Four cases were decided, in 4, 7, 9 and 12 days. Two are still pending after 20 days. The average of the closed cases is `r mean(toy$days[toy$closed])` days. But that average ignores E and F, which have already taken 20 days and will take longer. We do not know how much longer. We know only that they will take **at least 20 days**.
+
+This is the whole problem. A pending case is not missing information. It is partial information. It says that the case has taken at least this long so far. Dropping it makes delay look shorter than it is. Counting it as if it closed on the cut-off date also makes delay look shorter, though less so. Statisticians call such a case **censored**. Its true time is cut off by the end of our observation. The methods of this chapter use what a censored case tells us, and nothing more.
+
+Now our data. For each case we work out the days from receipt to decision. For a pending case we count the days to the cut-off date and mark it as censored. A transferred case was not decided by this office, so it is censored on the day of transfer. Rejections are decisions, so they count as disposals. We set aside, for now, the cases whose dates are missing or impossible. @sec-delay-checks looks at them.
+
+```{r}
+cases <- applications |>
+  mutate(end = if_else(status == "pending", cutoff, disposed),
+         days = as.numeric(end - received),
+         event = status %in% c("disposed", "rejected")) |>
+  filter(!is.na(end), days >= 0)
+```
+
+`event` is `TRUE` for a decision and `FALSE` for a censored case. This pair of columns, the time and whether the event happened, is all that survival analysis needs. Let us compare the usual figure, the average of closed cases, with the truth that we happen to know.
+
+```{r}
+naive <- cases |>
+  filter(event) |>
+  summarise(closed_mean = mean(days), closed_median = median(days), .by = district)
+
+true_fig <- truth |>
+  summarise(true_mean = mean(true_days), true_median = median(true_days), .by = district)
+
+naive |>
+  left_join(true_fig, by = "district") |>
+  mutate(across(where(is.numeric), round)) |>
+  arrange(district)
+```
+
+```{r}
+#| include: false
+nv <- naive |> left_join(true_fig, by = "district")
+dh <- nv |> filter(district == "Dhaulagarh")
+oth <- nv |> filter(district != "Dhaulagarh")
+all_naive <- cases |> filter(event) |> summarise(m = mean(days), md = median(days))
+all_true <- truth |> summarise(m = mean(true_days), md = median(true_days))
+```
+
+Look at Dhaulagarh. The average of its closed cases is `r round(dh$closed_mean)` days and the median `r dh$closed_median` days. Other districts range from `r round(min(oth$closed_mean))` to `r round(max(oth$closed_mean))` days on average, and `r min(oth$closed_median)` to `r max(oth$closed_median)` days at the median. On these figures Dhaulagarh is as quick as any district. In truth, the median case of Dhaulagarh takes `r round(dh$true_median)` days, and the average `r round(dh$true_mean)` days. Across the State, the closed cases average `r round(all_naive$m, 1)` days, while the true average is `r round(all_true$m, 1)` days. Almost all of that gap comes from Dhaulagarh.
+
+In other districts the closed-case figures are close to the truth. That is because their cases are quick compared with the year we observe. The bias grows as cases get slower, as the period gets shorter, and as the backlog grows. A district that stops clearing hard cases improves its own average of closed cases.
+
+::: callout-warning
+## Caution, averages of closed cases mislead
+
+The average, or median, of cases closed during the year is the figure most reports quote. It ignores every pending case, and the pending cases are the slowest. So it understates delay, and it understates it most where delay is worst. Never conclude from it that an office is quick. Use the methods below, which count the pending cases for what they tell us.
+:::
+
+## First, check the dates {#sec-delay-checks}
+
+Every number in this chapter is a difference between two dates. So the dates come first. The methods of [Chapter 18](https://anilyayavar.github.io/new-book/12-8Lubridate.html) apply throughout.
+
+### Missing and impossible dates {#sec-delay-baddates}
+
+A decided case must have a decision date, and the decision cannot come before the receipt.
+
+```{r}
+bad_dates <- applications |>
+  filter((status != "pending" & is.na(disposed)) | disposed < received) |>
+  mutate(problem = if_else(is.na(disposed), "decision date missing", "decided before receipt"))
+
+bad_dates |>
+  select(id, office, received, disposed, status, problem)
+```
+
+```{r}
+#| include: false
+bd_before <- bad_dates |> filter(problem == "decided before receipt")
+bd_missing <- bad_dates |> filter(problem == "decision date missing")
+bd_year <- bd_before |> filter(as.numeric(received - disposed) > 300)
+```
+
+The test finds `r num(nrow(bad_dates))` cases. `r Num(nrow(bd_missing))` have no decision date though the status says decided. `r Num(nrow(bd_before))` were decided before they were received. In `r num(nrow(bd_year))` of these the decision falls almost a year early, which looks like the wrong year typed in a date of early 2025. The others are a few days early, perhaps two dates swapped. Each needs the file. A case decided before it was received may also be a back-dated entry. These cases were left out of `cases` above. They are too few to change any result, but they say something about the care taken in entering dates.
+
+### Disposed of on the day received {#sec-delay-sameday}
+
+A decision on the day of receipt is possible for a simple service, but worth a look.
+
+```{r}
+cases |>
+  filter(event) |>
+  summarise(decided = n(), same_day = sum(days == 0),
+            same_day_pct = round(100 * mean(days == 0), 1), .by = service) |>
+  arrange(desc(same_day_pct))
+```
+
+```{r}
+#| include: false
+sd <- cases |> filter(event) |> summarise(same_day = sum(days == 0), .by = service)
+sd_caste <- sd$same_day[sd$service == "Caste certificate"]
+```
+
+Most same-day decisions are caste certificates, `r sd_caste` of them. In our example these were issued over the counter from existing records, which is the service working well. In real work, take a small sample from each service and check that the certificate was really issued that day, and that a same-day rejection was not used to clear the queue.
+
+### The ageing of pending cases {#sec-delay-ageing}
+
+Pending cases are the heart of this chapter, so let us see how old they are. `cut()` puts each age into a band.
+
+```{r}
+pending <- cases |>
+  filter(status == "pending") |>
+  mutate(age = cut(days, c(-1, 30, 90, 180, 366),
+                   labels = c("Up to 30 days", "31 to 90", "91 to 180", "Over 180")))
+
+pending |>
+  count(district, age) |>
+  pivot_wider(names_from = age, values_from = n, values_fill = 0)
+```
+
+```{r}
+#| include: false
+pend_d <- pending |> count(district)
+pend_dh <- pend_d$n[pend_d$district == "Dhaulagarh"]
+pend_old <- pending |> filter(days > 180) |> count(district)
+old_dh <- pend_old$n[pend_old$district == "Dhaulagarh"]
+old_other <- sum(pend_old$n[pend_old$district != "Dhaulagarh"])
+```
+
+In most districts, pending cases are young. They were received in the last weeks of the year and are still within the limit. Dhaulagarh is different. It holds `r pend_dh` of the `r big(nrow(pending))` pending cases, and `r old_dh` of them are over 180 days old, against `r old_other` in all other districts together. The age of the pending cases is the first warning that the closed-case figures were hiding something.
+
+### Bunching on the last day of the month {#sec-delay-monthend}
+
+Offices often review pendency at a monthly meeting. A rush of decisions on the last day of the month may show cases closed in a hurry for the meeting, or entered later with a back-dated date. Let us count the share of each office's decisions that fall on the last day of a month. With about 30 days in a month, roughly 3% would be expected by chance.
+
+```{r}
+cases |>
+  filter(event) |>
+  mutate(month_end = disposed == ceiling_date(disposed, "month") - 1) |>
+  summarise(decided = n(), month_end_pct = round(100 * mean(month_end), 1), .by = office) |>
+  arrange(desc(month_end_pct)) |>
+  head(5)
+```
+
+```{r}
+#| include: false
+me <- cases |> filter(event) |>
+  mutate(month_end = disposed == ceiling_date(disposed, "month") - 1) |>
+  summarise(p = 100 * mean(month_end), .by = office)
+```
+
+```{r}
+#| include: false
+me_top <- me |> slice_max(p, n = 1, with_ties = FALSE)
+me_top_n <- cases |> filter(event, office == me_top$office,
+                            disposed == ceiling_date(disposed, "month") - 1) |> nrow()
+```
+
+The highest is `r me_top$office`, at `r round(me_top$p, 1)`%. That is about twice what chance gives, but it rests on only `r me_top_n` decisions. Among seventeen offices, one is likely to look a little high by chance. There is no sign of a month-end rush. A test that finds little is also a result, and belongs in the working papers. The other kind of bunching, just before the time limit, is taken up in @sec-delay-underlimit.
+
+## How long cases really take, the Kaplan-Meier curve {#sec-delay-km}
+
+The Kaplan-Meier method answers a simple question. What share of cases is still pending after each number of days? It uses the pending cases correctly. Let us work through the six toy cases by hand.
+
+On day 4, six cases are open and one is decided. So the share still pending falls to 5/6. On day 7, five are open and one is decided. The share falls by a further 4/5, to 5/6 × 4/5. Day 9 and day 12 work the same way. Cases E and F are never decided. They simply leave the count on day 20, without pulling the share down. Each step uses only the cases still under observation on that day. That is how a pending case counts for exactly what it tells us.
+
+```{r}
+toy_fit <- survfit(Surv(days, closed) ~ 1, data = toy)
+tidy(toy_fit)
+```
+
+`Surv(days, closed)` pairs the time with whether the event happened. `survfit()` fits the curve, and `tidy()` from the broom package turns it into a table. `n.risk` is the number of cases still open, `n.event` the number decided that day, `n.censor` those that left the count still pending, and `estimate` the share still pending. After 12 days, `r round(tidy(toy_fit)$estimate[4], 2)` of the cases, that is a third, are still pending. The curve stops falling there because no more decisions are seen.
+
+Now the whole State.
+
+```{r}
+km_all <- survfit(Surv(days, event) ~ 1, data = cases)
+km_all
+```
+
+```{r}
+#| include: false
+med_all <- summary(km_all)$table[c("median", "0.95LCL", "0.95UCL")]
+s30 <- summary(km_all, times = 30)
+within30 <- 1 - s30$surv
+```
+
+The output gives the **median time to disposal**, `r med_all[1]` days, with a 95% confidence interval of `r med_all[2]` to `r med_all[3]` days. Half of all cases are decided within this time. The interval is narrow because there are thousands of cases. Let us draw the curve. `geom_step()` draws it as a staircase, since the share changes only on days when a case is decided.
+
+```{r}
+#| label: fig-delay-km
+#| fig-cap: "Share of applications still pending after each number of days, all districts. The dotted lines, almost on top of the curve, are the 95% confidence interval. The dashed line is the example time limit of 30 days."
+#| fig-height: 3.5
+tidy(km_all) |>
+  filter(time <= 200) |>
+  ggplot(aes(time, estimate)) +
+  geom_step() +
+  geom_step(aes(y = conf.low), linetype = "dotted") +
+  geom_step(aes(y = conf.high), linetype = "dotted") +
+  geom_vline(xintercept = 30, linetype = "dashed") +
+  scale_y_continuous(labels = scales::percent) +
+  labs(x = "Days since the application was received", y = "Still pending") +
+  theme_minimal()
+```
+
+Read the curve from the left. The curve falls steeply in the first three weeks, as most cases are decided. At the dashed line, `r pct(s30$surv)`% of cases are still pending. So `r pct(within30)`% are decided within the 30-day limit. After that the curve flattens into a long tail, the cases that take months. Where the curve is flat, nothing is being decided. Where it stays well above zero, a backlog is building.
+
+For the audit report, three numbers from the curve say most of it. These are the median days to disposal, the share decided within the time limit, and the share still pending after, say, three times the limit. `summary()` with `times` reads the curve at any day we choose.
+
+```{r}
+summary(km_all, times = c(30, 90))
+```
+
+```{r}
+#| include: false
+s90 <- summary(km_all, times = 90)$surv
+```
+
+After 90 days, `r pct(s90, 1)`% of cases are still pending. Unlike the average of closed cases, these numbers use every case.
+
+## Comparing districts and offices {#sec-delay-compare}
+
+Let us fit one curve for each district. Adding `~ district` does this.
+
+```{r}
+km_district <- survfit(Surv(days, event) ~ district, data = cases)
+km_district
+```
+
+```{r}
+#| include: false
+kd <- as_tibble(summary(km_district)$table, rownames = "strata") |>
+  mutate(district = str_remove(strata, "district="))
+kd_dh <- kd |> filter(district == "Dhaulagarh")
+kd_oth <- kd |> filter(district != "Dhaulagarh")
+```
+
+The medians of most districts lie between `r min(kd_oth$median)` and `r max(kd_oth$median)` days. Dhaulagarh's is `r kd_dh$median` days, with an interval of `r kd_dh[["0.95LCL"]]` to `r kd_dh[["0.95UCL"]]`. The average of its closed cases suggested it was ordinary. The curves show why it is not.
+
+```{r}
+#| label: fig-delay-district
+#| fig-cap: "Share of applications still pending, by district. Dhaulagarh's curve stops falling and stays far above the others."
+#| fig-height: 4
+tidy(km_district) |>
+  mutate(district = str_remove(strata, "district=")) |>
+  ggplot(aes(time, estimate, colour = district == "Dhaulagarh", group = district)) +
+  geom_step() +
+  geom_vline(xintercept = 30, linetype = "dashed") +
+  scale_colour_manual(values = c("grey60", "firebrick"),
+                      labels = c("Other districts", "Dhaulagarh")) +
+  scale_y_continuous(labels = scales::percent) +
+  labs(x = "Days since the application was received", y = "Still pending", colour = NULL) +
+  theme_minimal() +
+  theme(legend.position = "top")
+```
+
+```{r}
+#| include: false
+dh_s <- summary(km_district, times = 180)
+dh_180 <- dh_s$surv[dh_s$strata == "district=Dhaulagarh"]
+```
+
+The seven grey curves fall together and almost reach zero. Dhaulagarh's falls at first like the others, and then levels off. After 180 days, `r pct(dh_180)`% of its cases are still pending. Its quick cases are as quick as anyone's. But a large group of its cases is not moving at all.
+
+### Is the difference real? The log-rank test
+
+Curves from a sample always differ a little. The **log-rank test** asks whether the differences are larger than chance would give. It compares, day by day, the decisions seen in each group with those expected if all groups were alike. `survdiff()` runs it.
+
+```{r}
+survdiff(Surv(days, event) ~ district, data = cases)
+```
+
+```{r}
+#| include: false
+sdf <- survdiff(Surv(days, event) ~ district, data = cases)
+sdf_rest <- survdiff(Surv(days, event) ~ district, data = filter(cases, district != "Dhaulagarh"))
+p_rest <- pchisq(sdf_rest$chisq, length(sdf_rest$n) - 1, lower.tail = FALSE)
+```
+
+The chi-square is `r round(sdf$chisq)` on `r length(sdf$n) - 1` degrees of freedom, and the p-value is tiny. `Observed` and `Expected` show that Dhaulagarh has far fewer decisions than expected. The test says the districts differ, not by how much. With thousands of cases, even small differences test as significant. Without Dhaulagarh, the other seven districts still differ, with a chi-square of `r round(sdf_rest$chisq)` and a p-value of `r signif(p_rest, 2)`. Yet their medians differ by only a few days. [Section 30.12](https://anilyayavar.github.io/new-book/12-3b-tests.html#sec-tests-effect) explains why significant is not the same as important. Report the medians and shares, and use the test only to confirm that a large difference is not chance.
+
+### A table for each office
+
+The audit report needs a table. For each office we want the number of cases, the median days with its interval, and the share decided within the limit. `summary()` gives both from one fit.
+
+```{r}
+km_office <- survfit(Surv(days, event) ~ office, data = cases)
+
+office_med <- as_tibble(summary(km_office)$table, rownames = "strata") |>
+  transmute(office = str_remove(strata, "office="), cases = records,
+            median_days = median, lower = `0.95LCL`, upper = `0.95UCL`)
+
+s_office <- summary(km_office, times = 30)
+office_30 <- tibble(office = str_remove(s_office$strata, "office="),
+                    within_30_pct = round(100 * (1 - s_office$surv)))
+
+office_table <- office_med |>
+  left_join(office_30, by = "office") |>
+  arrange(desc(median_days))
+office_table |>
+  print(n = 17)
+```
+
+```{r}
+#| include: false
+hills <- office_table |> filter(office == "Sonpur Hills")
+ot_fast <- office_table |> filter(!str_detect(office, "Dhaulagarh|Hills"))
+```
+
+`records` is the number of cases in each curve. Both Dhaulagarh offices sit at the top, with the lowest shares within the limit. Near them is Sonpur Hills, with a median of `r hills$median_days` days. But it has only `r hills$cases` cases, and its interval runs from `r hills$lower` to `r if (is.na(hills$upper)) "a value the data cannot fix" else paste(hills$upper, "days")`. An office with few cases can look very good or very bad by chance. Before reporting it, look at its cases one by one. Two other offices stand out in the last column. Motinagar Tehsil decides only `r ot_fast$within_30_pct[ot_fast$office == "Motinagar Tehsil"]`% of its cases within the limit, though its median is ordinary. Kesargaon Sadar decides `r ot_fast$within_30_pct[ot_fast$office == "Kesargaon Sadar"]`%, `r if (ot_fast$office[which.max(ot_fast$within_30_pct)] == "Kesargaon Sadar") "the best in the State" else "among the best in the State"`. We come back to both in @sec-delay-gaming.
+
+## Against the time limit {#sec-delay-limit}
+
+The law promises a decision within the time limit. The audit asks three questions about it. What share of cases was decided within it? How many pending cases are already past it? Which cases exceeded it by far?
+
+The first answer comes from the curve, as above. Let us see it for each service.
+
+```{r}
+km_service <- survfit(Surv(days, event) ~ service, data = cases)
+s_service <- summary(km_service, times = 30)
+tibble(service = str_remove(s_service$strata, "service="),
+       within_30_pct = round(100 * (1 - s_service$surv)),
+       lower = round(100 * (1 - s_service$upper)),
+       upper = round(100 * (1 - s_service$lower)))
+```
+
+```{r}
+#| include: false
+sv <- tibble(service = str_remove(s_service$strata, "service="), w = 100 * (1 - s_service$surv))
+```
+
+`r sv$service[which.max(sv$w)]`s do best, with `r round(max(sv$w))`% decided within 30 days. `r sv$service[which.min(sv$w)]`s do worst, with `r round(min(sv$w))`%. Note that the interval of the share decided comes from the interval of the share pending, turned round. Trade licences show `r round(sv$w[sv$service == "Trade licence"])`%. We will see in @sec-delay-underlimit that some of this is not what it seems.
+
+Next, the pending cases already past the limit.
+
+```{r}
+pending_beyond <- pending |>
+  summarise(pending = n(), beyond_limit = sum(days > 30), beyond_3x = sum(days > 90),
+            .by = district) |>
+  arrange(desc(beyond_limit))
+pending_beyond
+```
+
+```{r}
+#| include: false
+pb_all <- pending |> summarise(n = n(), b = sum(days > 30), b3 = sum(days > 90))
+pb_dh <- pending_beyond |> filter(district == "Dhaulagarh")
+```
+
+Of the `r big(pb_all$n)` pending cases, `r big(pb_all$b)` are past the limit already, and `r big(pb_all$b3)` are past three times the limit. Dhaulagarh accounts for `r pb_dh$beyond_3x` of these. These are cases where the guarantee has already failed, though no report of disposals shows them.
+
+Finally, the decided cases that exceeded the limit by far. Three times the limit is our example measure of "far".
+
+```{r}
+cases |>
+  filter(event, days > 90) |>
+  summarise(cases = n(), median_days = median(days), .by = service) |>
+  arrange(desc(cases))
+```
+
+```{r}
+#| include: false
+far <- cases |> filter(event, days > 90)
+```
+
+`r big(nrow(far))` decided cases took more than 90 days. They are spread across services and offices. Many will be the genuinely complex cases. A sample of them, read with their files, shows whether the delay was the office's or had a cause outside its control.
+
+::: callout-warning
+## Caution, a long time is not always a fault
+
+Some cases take long for good reasons. A pension case may wait for service records from another State. An applicant may be asked for a document and take weeks to send it. A water connection may need a pipeline that is not yet laid. Many laws stop the clock while the applicant is asked for something, and some count only working days. Before calling a case a delay, check the file for these. The method of this chapter measures time. The file says whose time it was.
+:::
+
+## What drives delay {#sec-delay-cox}
+
+The curves compare one factor at a time. Delay may depend on several at once, such as the district, the service and the season. The **Cox model** looks at them together. Let us add a column for cases received in June or July, the admission season.
+
+```{r}
+cases <- cases |>
+  mutate(season = if_else(month(received) %in% 6:7, "June-July", "Other months"),
+         season = fct_relevel(season, "Other months"))
+
+cox <- coxph(Surv(days, event) ~ district + service + season, data = cases)
+
+tidy(cox, exponentiate = TRUE, conf.int = TRUE) |>
+  select(term, hazard_ratio = estimate, conf.low, conf.high) |>
+  mutate(across(where(is.numeric), \(x) round(x, 2)))
+```
+
+```{r}
+#| include: false
+cx <- tidy(cox, exponentiate = TRUE, conf.int = TRUE)
+hr <- function(t) cx$estimate[cx$term == t]
+hr_dh <- hr("districtDhaulagarh")
+hr_pen <- hr("servicePension sanction")
+hr_season <- hr("seasonJune-July")
+```
+
+Each number in `hazard_ratio` compares a group with a base group. The base is the first level of each factor, here Amarpur, caste certificates and other months. In plain words, a hazard ratio says **how much faster a case is disposed of**. A ratio of 1 means as fast as the base. A ratio of 0.5 means that, on any day, a pending case is half as likely to be decided as a similar case in the base group. A ratio above 1 means faster.
+
+Dhaulagarh has a ratio of `r round(hr_dh, 2)`. Its pending cases are decided at about `r round(hr_dh, 2)` times the pace of Amarpur's, after allowing for the mix of services and the season. Pension sanctions are decided at `r round(hr_pen, 2)` times the pace of caste certificates. Cases received in June and July move at `r round(hr_season, 2)` times the pace of other months. Most of that comes from caste certificates, which surge in the admission season. The model spreads the effect over every service, since it has no term for the two together.
+
+The model rests on one assumption. A hazard ratio is a single number for the whole period, so the gap between groups must stay in the same proportion from the first day to the last. `cox.zph()` tests this.
+
+```{r}
+cox.zph(cox)
+```
+
+```{r}
+#| include: false
+zph <- cox.zph(cox)$table
+```
+
+A small p-value means the assumption fails. Here it fails for every term, and for the model as a whole. We can see why. Dhaulagarh's quick cases move like anyone's, and its stuck cases do not move at all. One ratio cannot describe both. The services differ in shape too. Pension cases have a long tail, and trade licences pile up on day 30. When the check fails, do not report the ratio as if it held. Either fit the model separately within each district with `strata(district)` in the formula, which keeps the other ratios and drops the district's, or compare periods separately, such as the first 30 days and after. Here the curves of @fig-delay-district already tell the story better than any single ratio. So use the Cox model to rank possible causes, and the curves to report.
+
+## Gaming the clock {#sec-delay-gaming}
+
+When an office is judged by the share of cases decided in time, it may learn to manage the clock rather than the work. The portal then reports good figures while applicants wait. Three patterns are common, and each leaves a trace in the data.
+
+### Closed and reopened under a new number {#sec-delay-reopen}
+
+An office may reject a slow case just before the limit, and then accept the same case again under a new number. The new number starts with a fresh clock. Applicants also apply again after a genuine rejection, so a reopening alone means little. What matters is the timing. Let us join each reopened application to the one it continues. This is a self-join, the table joined to itself.
+
+```{r}
+reopened <- applications |>
+  filter(!is.na(reopened_from)) |>
+  inner_join(applications |>
+               select(reopened_from = id, prev_received = received,
+                      prev_decided = disposed, prev_status = status),
+             by = "reopened_from") |>
+  mutate(prev_days = as.numeric(prev_decided - prev_received),
+         gap = as.numeric(received - prev_decided))
+
+reopened |>
+  mutate(quick = gap <= 3 & between(prev_days, 25, 30)) |>
+  summarise(reopened = n(), quick = sum(quick),
+            median_gap = median(gap), .by = office) |>
+  arrange(desc(quick)) |>
+  head(6)
+```
+
+```{r}
+#| include: false
+ro <- reopened |> mutate(quick = gap <= 3 & between(prev_days, 25, 30))
+ro_k <- ro |> filter(office == "Kesargaon Sadar")
+ro_oth <- ro |> filter(office != "Kesargaon Sadar")
+```
+
+`gap` is the number of days between the earlier decision and the new application. `prev_days` is how long the earlier one had taken. A **quick reopening** here is one that comes within three days of a rejection made on day 25 to 30. In most offices, applicants come back after a few weeks, with a median gap of `r round(median(ro_oth$gap))` days. That is an applicant gathering the missing papers. Kesargaon Sadar is different. It has `r nrow(ro_k)` reopenings, `r sum(ro_k$quick)` of them quick, with a median gap of `r median(ro_k$gap)` days. Its rejections fall just before the limit, and the case is back almost at once. We follow this office in @sec-delay-case-reset.
+
+### Disposed of by transfer {#sec-delay-transfer}
+
+An application filed at the wrong office should be transferred, and quickly. But a transfer can also be used to get rid of a slow case. If the portal counts a transfer as a disposal, the office's figures improve, and the receiving office starts a fresh clock. Let us look at the share transferred, and when.
+
+```{r}
+cases |>
+  summarise(cases = n(), transferred = sum(status == "transferred"),
+            transferred_pct = round(100 * mean(status == "transferred"), 1),
+            median_day = median(days[status == "transferred"]), .by = office) |>
+  arrange(desc(transferred_pct)) |>
+  head(5)
+```
+
+```{r}
+#| include: false
+tr <- cases |> filter(status == "transferred")
+tr_m <- tr |> filter(office == "Motinagar Tehsil")
+tr_o <- tr |> filter(office != "Motinagar Tehsil")
+mt_share <- mean(cases$status[cases$office == "Motinagar Tehsil"] == "transferred")
+```
+
+Most offices transfer about `r round(100 * nrow(tr_o) / sum(cases$office != "Motinagar Tehsil"))`% of their cases, within the first week. Motinagar Tehsil transfers `r pct(mt_share)`% of its cases, and the median transfer comes on day `r median(tr_m$days)`. A wrong-office application is obvious on the first day. It does not take three weeks to notice. A histogram makes the point.
+
+```{r}
+#| label: fig-delay-transfer
+#| fig-cap: "Day on which applications were transferred. Most offices transfer in the first week. Motinagar Tehsil transfers just before the 30-day limit."
+#| fig-height: 3
+tr |>
+  mutate(group = if_else(office == "Motinagar Tehsil", "Motinagar Tehsil", "Other offices")) |>
+  ggplot(aes(days)) +
+  geom_histogram(binwidth = 1, boundary = 0.5) +
+  facet_wrap(~ group, scales = "free_y") +
+  geom_vline(xintercept = 30, linetype = "dashed") +
+  labs(x = "Days from receipt to transfer", y = "Applications") +
+  theme_minimal()
+```
+
+How much does this flatter the office? The portal counts a transfer as a disposal. Our analysis treats it as censored, since nothing was decided. Let us compare the two.
+
+```{r}
+portal_view <- cases |>
+  filter(office == "Motinagar Tehsil") |>
+  mutate(event_portal = status != "pending")
+
+c(portal = 1 - summary(survfit(Surv(days, event_portal) ~ 1, data = portal_view), times = 30)$surv,
+  audit  = 1 - summary(survfit(Surv(days, event) ~ 1, data = portal_view), times = 30)$surv) |>
+  round(2)
+```
+
+```{r}
+#| include: false
+pv1 <- 1 - summary(survfit(Surv(days, event_portal) ~ 1, data = portal_view), times = 30)$surv
+pv2 <- 1 - summary(survfit(Surv(days, event) ~ 1, data = portal_view), times = 30)$surv
+```
+
+On the portal's count, Motinagar Tehsil decides `r pct(pv1)`% of cases within the limit. Counting only real decisions, the figure is `r pct(pv2)`%. Even the second figure is too kind, since a censored case is assumed to behave like the cases that stayed. The transferred cases continue somewhere else, and their applicants are still waiting. The receiving offices' records show how long they really took.
+
+### Disposals bunched just under the limit {#sec-delay-underlimit}
+
+If decisions are made, or recorded, to beat the limit, they pile up just before it. Real decision times have no reason to jump on day 28 and vanish on day 31. [Section 25.7](https://anilyayavar.github.io/new-book/09-2ggplot2-polish.html#sec-ggplot2-split) found bills bunched below a sanction limit in the same way. Let us draw the days to decision for each service, up to 45 days.
+
+```{r}
+#| label: fig-delay-bunch
+#| fig-cap: "Days from receipt to decision, by service, up to 45 days. The dashed line is the 30-day limit. Trade licences pile up on days 28 to 30."
+#| fig-height: 5
+cases |>
+  filter(event, days <= 45) |>
+  ggplot(aes(days)) +
+  geom_histogram(binwidth = 1, boundary = 0.5) +
+  geom_vline(xintercept = 30.5, linetype = "dashed") +
+  facet_wrap(~ service, ncol = 2, scales = "free_y") +
+  labs(x = "Days from receipt to decision", y = "Decisions") +
+  theme_minimal()
+```
+
+Four services fall smoothly. Trade licences rise sharply on days 28, 29 and 30, and drop to almost nothing on day 31. Let us put numbers on it. For each service we compare the decisions per day on days 28 to 30 with those on days 24 to 27 and 31 to 34.
+
+```{r}
+bunching <- cases |>
+  filter(event) |>
+  summarise(per_day_24_27 = sum(between(days, 24, 27)) / 4,
+            per_day_28_30 = sum(between(days, 28, 30)) / 3,
+            per_day_31_34 = sum(between(days, 31, 34)) / 4,
+            .by = service) |>
+  mutate(ratio = round(per_day_28_30 / per_day_24_27, 1))
+bunching
+```
+
+```{r}
+#| include: false
+bt <- bunching |> filter(service == "Trade licence")
+bo <- bunching |> filter(service != "Trade licence")
+tl_d <- cases |> filter(event, service == "Trade licence") |>
+  summarise(r = sum(between(days, 28, 30)) / 3 / (sum(between(days, 24, 27)) / 4), .by = district)
+```
+
+For trade licences, `r round(bt$per_day_28_30)` decisions a day fall on days 28 to 30, against `r round(bt$per_day_24_27)` a day just before and `r round(bt$per_day_31_34)` just after. The ratio is `r bt$ratio`. For the other services it is between `r min(bo$ratio)` and `r max(bo$ratio)`. The pattern holds in every district, with ratios from `r round(min(tl_d$r), 1)` to `r round(max(tl_d$r), 1)`. So it is a practice of the trade licence section across the State, not one office. Staff may be working hard against the deadline. Or decisions taken later may be recorded with an earlier date. The gap after day 30 favours the second, since real work against a deadline still lets some cases slip a day or two. The data cannot settle it. The portal's audit trail can. It records when each decision was entered, and by whom. A decision dated day 29 but entered on day 40 is back-dated.
+
+## What the first book adds {#sec-delay-earlier}
+
+Several tests from *R for Audit Analytics* apply directly. We run each in a few lines, and the chapters cited explain them in full.
+
+**Gaps in the application numbers**, [Chapter 37](https://anilyayavar.github.io/new-book/21-gaps.html). The portal numbers applications in order. A missing number may be an application deleted before it was ever counted.
+
+```{r}
+nums <- as.integer(str_remove(applications$id, "PS"))
+setdiff(seq(min(nums), max(nums)), nums)
+```
+
+No number is missing. In real data, also look for days with no applications at all, as in [Section 37.5](https://anilyayavar.github.io/new-book/21-gaps.html#sec-gaps-dates). An office that stops taking applications for a week has a backlog that no table of pending cases shows.
+
+**Monthly receipts and pendency**, [Chapter 49](https://anilyayavar.github.io/new-book/12-9ts.html). Receipts and pending cases at each month end form two time series. A backlog shows as pendency rising while receipts are steady.
+
+```{r}
+#| include: false
+pend_at <- function(d, x) sum(x$received <= d & (x$status == "pending" | x$end > d))
+pend_series <- tibble(dhaulagarh = map_int(seq(as.Date("2024-05-01"), as.Date("2025-04-01"),
+                                               by = "month") - 1,
+                                           \(d) pend_at(d, filter(cases, district == "Dhaulagarh"))))
+```
+
+```{r}
+month_ends <- seq(as.Date("2024-05-01"), as.Date("2025-04-01"), by = "month") - 1
+tibble(month_end = month_ends,
+       pending = map_int(month_ends, \(d) sum(cases$received <= d &
+                                                (cases$status == "pending" | cases$end > d)))) |>
+  mutate(dhaulagarh = map_int(month_end, \(d) sum(cases$district == "Dhaulagarh" &
+                                                    cases$received <= d &
+                                                    (cases$status == "pending" | cases$end > d))),
+         others = pending - dhaulagarh)
+```
+
+`map_int()` counts, for each month end, the cases received by then and not yet closed. In the other districts, pendency rises in the admission season and falls back. Dhaulagarh's rises `r if (!is.unsorted(pend_series$dhaulagarh)) "every month and never falls" else "almost every month"`. That is a backlog growing, and the series is a simple chart for the report.
+
+**Comparing skewed times**, [Section 30.8](https://anilyayavar.github.io/new-book/12-3b-tests.html#sec-tests-wilcox). The Wilcoxon test compares two groups of skewed values. But it knows nothing of censoring. On closed cases alone it would find Dhaulagarh ordinary, exactly as the averages did. For time to an event, use the log-rank test of @sec-delay-compare instead.
+
+**Other chapters.** [Section 38.7](https://anilyayavar.github.io/new-book/21b-process-mining.html#sec-process-time) measured the time between steps of a file with process mining. That is the next step when a portal records every step, not only receipt and decision. It shows where in the chain the days are lost. [Chapter 34](https://anilyayavar.github.io/new-book/20-duplicates.html) finds the same applicant applying twice, which may hide reopenings that the portal never linked. @sec-ssyaudit read the grievances of a health scheme. The days taken to settle them can be studied with the curves of this chapter.
+
+## A risk view of each office {#sec-delay-risk}
+
+An office caught by one test may have a good reason. One caught by several is a better use of the auditor's time. As in @sec-payroll-risk and @sec-tax-risk, the simplest way to combine flags is to count them. Each flag compares the office with the State.
+
+```{r}
+state_median <- summary(km_all)$table[["median"]]
+state_within <- 100 * within30
+state_pend30 <- mean(cases$status == "pending" & cases$days > 30)
+state_late_rej <- mean(cases$status == "rejected" & between(cases$days, 25, 30))
+
+office_flags <- cases |>
+  summarise(cases = n(),
+            pend_beyond = mean(status == "pending" & days > 30),
+            late_rej = mean(status == "rejected" & between(days, 25, 30)),
+            late_transfers = sum(status == "transferred" & days > 15),
+            .by = office) |>
+  left_join(office_table |> select(office, median_days, within_30_pct), by = "office") |>
+  left_join(ro |> summarise(quick_reopen = sum(quick), .by = office), by = "office") |>
+  left_join(bad_dates |> count(office, name = "date_errors"), by = "office") |>
+  mutate(across(c(quick_reopen, date_errors), \(x) coalesce(x, 0L)),
+         slow_median      = median_days > 1.5 * state_median,
+         low_within_limit = within_30_pct < state_within - 10,
+         many_pending     = pend_beyond > 2 * state_pend30,
+         late_rejections  = late_rej > 2 * state_late_rej,
+         quick_reopening  = quick_reopen >= 5,
+         late_transfer    = late_transfers >= 5,
+         date_error       = date_errors > 0,
+         flags = slow_median + low_within_limit + many_pending + late_rejections +
+           quick_reopening + late_transfer + date_error) |>
+  arrange(desc(flags), desc(median_days))
+
+flag_names <- c("slow_median", "low_within_limit", "many_pending", "late_rejections",
+                "quick_reopening", "late_transfer", "date_error")
+office_flags$tests <- apply(office_flags[flag_names], 1, \(r) paste(flag_names[r], collapse = ", "))
+
+office_flags |>
+  select(office, cases, flags, tests) |>
+  print(n = 8)
+```
+
+```{r}
+#| include: false
+of2 <- office_flags |> filter(flags >= 2)
+of_dh <- office_flags |> filter(str_detect(office, "Dhaulagarh"))
+of_one <- office_flags |> filter(flags == 1)
+of_date_only <- of_one |> filter(date_error)
+hills_flags <- office_flags$flags[office_flags$office == "Sonpur Hills"]
+```
+
+`apply()` pastes together the names of the flags each office raises. The thresholds are examples, set against the State's own figures. `r Num(nrow(of2))` offices raise two flags or more. They are `r and_list(of2$office)`. The two Dhaulagarh offices raise `r and_list(sapply(unique(of_dh$flags), num))` flags each, but these measure much the same thing, slow cases piling up. Motinagar Tehsil is flagged for late transfers and a low share within the limit. Kesargaon Sadar is flagged for rejections just before the limit and quick reopenings. No measure of speed would ever flag it. `r if (nrow(of_date_only) > 0) paste0(Num(nrow(of_date_only)), " offices raise only the date error flag. A wrong date in one file is a lapse in data entry, not a sign of delay.") else ""` Sonpur Hills `r if (hills_flags > 0) "raises a flag, but with so few cases it is a lead to check, not a finding" else "raises no flag, though its median is high, because with so few cases nothing about it is certain"`. The trade licence bunching does not show here at all, because it is spread across every office. Some patterns belong to a service, not an office, and need their own test.
+
+::: callout-note
+## A flag is a lead
+
+None of these tests proves a fault. Each says where to look. The work that follows is ordinary audit work, with registers, files, the portal's audit trail and the applicants themselves. The analysis looks at every application, and so points that work at the right places.
+:::
+
+## Audit use case, a district that looks fast but is not {#sec-delay-case-district}
+
+The department's own report ranks districts by the average days taken to dispose of cases. Let us rebuild that ranking, and set the audit's figures beside it.
+
+```{r}
+dept_view <- cases |>
+  filter(event) |>
+  summarise(closed_avg = round(mean(days), 1), .by = district)
+
+km_view <- as_tibble(summary(km_district)$table, rownames = "strata") |>
+  transmute(district = str_remove(strata, "district="), km_median = median)
+
+s_d <- summary(km_district, times = c(30, 180))
+share_view <- tibble(district = str_remove(s_d$strata, "district="), time = s_d$time,
+                     surv = s_d$surv) |>
+  pivot_wider(names_from = time, values_from = surv, names_prefix = "s") |>
+  transmute(district, within_30_pct = round(100 * (1 - s30)),
+            pending_180_pct = round(100 * s180))
+
+dept_view |>
+  left_join(km_view, by = "district") |>
+  left_join(share_view, by = "district") |>
+  arrange(closed_avg)
+```
+
+```{r}
+#| include: false
+dv <- dept_view |> mutate(rank = min_rank(closed_avg))
+dh_rank <- dv$rank[dv$district == "Dhaulagarh"]
+dh_tie <- dv$district[dv$rank == dh_rank & dv$district != "Dhaulagarh"]
+sv_dh <- share_view |> filter(district == "Dhaulagarh")
+sv_o <- share_view |> filter(district != "Dhaulagarh")
+dh_cases <- cases |> filter(district == "Dhaulagarh")
+dh_svc <- dh_cases |> filter(status == "pending", days > 180) |> count(service, sort = TRUE)
+dh_off <- dh_cases |> filter(status == "pending", days > 180) |> count(office)
+```
+
+On the department's measure, Dhaulagarh `r if (dh_rank == 1) "comes first" else paste("ranks", num(dh_rank), "of eight")`, with a closed-case average of `r dv$closed_avg[dv$district == "Dhaulagarh"]` days`r if (length(dh_tie) > 0) paste0(", level with ", and_list(dh_tie)) else ""`. Nobody reading that report would look at it twice. On the audit's measures it is last by far. It decides `r sv_dh$within_30_pct`% of cases within the limit, against `r min(sv_o$within_30_pct)`% to `r max(sv_o$within_30_pct)`% elsewhere. After six months, `r sv_dh$pending_180_pct`% of its cases are still pending, against at most `r max(sv_o$pending_180_pct)`% elsewhere. Let us see which cases are stuck.
+
+```{r}
+dh_cases |>
+  filter(status == "pending", days > 180) |>
+  count(office, service) |>
+  pivot_wider(names_from = office, values_from = n, values_fill = 0)
+```
+
+The stuck cases are in both offices and every service, `r dh_off$n[1]` in `r dh_off$office[1]` and `r dh_off$n[2]` in `r dh_off$office[2]`. It is not one difficult service, or one office. Something stopped the district's work on a large share of all its cases, while it kept deciding the easy ones on time. A backlog of this kind may have many causes, such as vacant posts, a long-pending software problem, or files waiting on one officer's desk. The figures cannot say which. They say clearly where to ask.
+
+### What the auditor does next
+
+1. Take a **sample of the stuck cases** from both offices and every service, and read the files. Note the last action on each and its date.
+2. Ask the district for its own **pendency register** and the minutes of its review meetings. Did the district know of the backlog, and what did it report upwards?
+3. Check the **staff in position** in both offices against the sanctioned posts for the year, as in @sec-payroll-strength.
+4. Use the portal's **audit trail** to see when each stuck case was last opened, and by whom.
+5. Contact a sample of **applicants**. Ask whether they received the service by other means, gave up, or are still waiting. Their answers show the cost of the delay.
+6. Recommend that the department report the share decided within the limit and the age of pending cases, not the average of closed cases.
+
+## Audit use case, the clock is reset {#sec-delay-case-reset}
+
+Let us follow the quick reopenings of Kesargaon Sadar. First we link every application to the first application of its chain, its *root*. At the start, each application is its own root. Each step of the loop replaces a root with the application it continues.
+
+```{r}
+quick_parent <- set_names(ro$reopened_from[ro$quick], ro$id[ro$quick])
+
+links <- tibble(id = applications$id, root = applications$id)
+repeat {
+  up <- quick_parent[links$root]
+  if (all(is.na(up))) break
+  links$root[!is.na(up)] <- up[!is.na(up)]
+}
+```
+
+`quick_parent` is a named vector. Looking up an application number in it gives the number it continues, or `NA`. Only quick reopenings are followed. An applicant who comes back after six weeks with new papers has made a new application. Each chain now runs from the first receipt to the last decision. We compare the office's figures counted by application number, as the portal counts them, with the same figures counted by chain.
+
+```{r}
+chains <- applications |>
+  filter(office == "Kesargaon Sadar") |>
+  left_join(links |> select(id, root), by = "id") |>
+  summarise(numbers = n(),
+            first_received = min(received),
+            last_status = status[which.max(received)],
+            last_decided = disposed[which.max(received)],
+            .by = root) |>
+  mutate(end = if_else(last_status == "pending", cutoff, last_decided),
+         days = as.numeric(end - first_received),
+         event = last_status %in% c("disposed", "rejected")) |>
+  filter(!is.na(end))
+
+by_number <- cases |> filter(office == "Kesargaon Sadar")
+fit_number <- survfit(Surv(days, event) ~ 1, data = by_number)
+fit_chain  <- survfit(Surv(days, event) ~ 1, data = chains)
+
+tibble(counted_by = c("application number", "chain"),
+       cases = c(nrow(by_number), nrow(chains)),
+       median_days = c(summary(fit_number)$table[["median"]], summary(fit_chain)$table[["median"]]),
+       within_30_pct = round(100 * (1 - c(summary(fit_number, times = 30)$surv,
+                                          summary(fit_chain, times = 30)$surv))))
+```
+
+```{r}
+#| include: false
+long_ch <- chains |> filter(numbers >= 3)
+max_ch <- chains |> slice_max(numbers, n = 1, with_ties = FALSE)
+w_num <- 1 - summary(fit_number, times = 30)$surv
+w_ch <- 1 - summary(fit_chain, times = 30)$surv
+ex_chain <- applications |>
+  left_join(links |> select(id, root), by = "id") |>
+  filter(root == max_ch$root) |>
+  select(id, received, disposed, status, reopened_from)
+ex_days <- as.numeric(coalesce(ex_chain$disposed, cutoff) - ex_chain$received)
+```
+
+Counted by number, Kesargaon Sadar decides `r pct(w_num)`% of its cases within the limit. Counted by chain, the figure is `r pct(w_ch)`%. The median hardly moves, because most of the office's cases are quick and never reset. The share within the limit is what the reset protects. Of its chains, `r num(nrow(long_ch))` ran through three numbers or more. Here is the longest chain.
+
+```{r}
+ex_chain
+```
+
+The applicant applied on `r fdate(ex_chain$received[1])`. The case was rejected `r num(nrow(ex_chain) - 1)` times, each time between day 25 and day 29, and each time it came back within days. `r if (sum(ex_days <= 30) == nrow(ex_chain)) "Every number met the 30-day limit." else paste0(Num(sum(ex_days <= 30)), " of its ", num(nrow(ex_chain)), " numbers met the 30-day limit.")` The applicant waited `r as.numeric(coalesce(ex_chain$disposed[nrow(ex_chain)], cutoff) - ex_chain$received[1])` days`r if (ex_chain$status[nrow(ex_chain)] == "pending") ", and is still waiting" else ""`.
+
+### What the auditor does next
+
+1. Take a sample of the chains and read the **rejection orders**. Were the reasons real, and were they the same each time?
+2. Check in the portal's **audit trail** who created each new number. An applicant who reapplies does so from the public side. An application created by office staff on the applicant's behalf is a sign of a reset.
+3. Contact a sample of **applicants**. Did they know their application was rejected? Did they apply again, or was it done for them?
+4. Ask whether Kesargaon Sadar's figures are used in any **performance ranking** or reward. That is often why a clock is managed.
+5. Search other offices for reopenings the portal did not link, by matching applicants' names, mobiles and addresses, as in [Chapter 34](https://anilyayavar.github.io/new-book/20-duplicates.html).
+6. Recommend that the portal carry the original date of receipt into any reopened case, and count time from it.
+
+## A suggested workflow
+
+1. **Get every application**, including those pending and those received before the period, with all dates, statuses, links and the notified limits. Record who extracted it and when.
+2. **Check the dates.** Missing and impossible dates, same-day decisions, the ageing of pending cases, and bunching at the month end.
+3. **Define the event and the censoring.** Decide what counts as a decision. Treat pending cases, and transfers, as censored, and say so in the report.
+4. **Draw the Kaplan-Meier curve.** Report the median days with its interval, the share decided within the limit, and the share pending after a long time.
+5. **Compare districts, offices and services.** Use curves and a table. Use the log-rank test to confirm a large difference, and remember that small offices are uncertain.
+6. **Measure the time limit.** Share within it, pending cases already past it, and cases far beyond it.
+7. **Look for causes** with a Cox model, and check its assumption.
+8. **Look for gaming.** Quick reopenings, late transfers, and bunching under the limit.
+9. **Combine the flags** for each office, and follow up the top ones with files, the audit trail and applicants.
+
+::: callout-important
+## Remember
+
+- An average of closed cases ignores the pending cases, which are the slowest. It understates delay most where delay is worst.
+- A pending case is censored. It tells us the case has taken at least this long. Survival analysis uses exactly that, and no more.
+- The Kaplan-Meier curve gives the share still pending after each number of days. Read the median and the share within the limit from it.
+- The log-rank test confirms a difference between groups. The medians and shares say how large it is.
+- A hazard ratio says how much faster a case is decided. Check the assumption with `cox.zph()` before you trust it.
+- A transfer or a rejection is not always a decision. Quick reopenings, late transfers and bunching under the limit are signs that the clock is being managed.
+- A long time is not always a fault. The file says whose time it was.
+:::
+
+## Where next
+
+Dates are in [Chapter 18](https://anilyayavar.github.io/new-book/12-8Lubridate.html), and gaps in numbers and dates in [Chapter 37](https://anilyayavar.github.io/new-book/21-gaps.html). Statistical tests, and why significant is not the same as important, are in [Chapter 30](https://anilyayavar.github.io/new-book/12-3b-tests.html). The time between steps of a process is in [Section 38.7](https://anilyayavar.github.io/new-book/21b-process-mining.html#sec-process-time), and bunching below a limit in [Section 25.7](https://anilyayavar.github.io/new-book/09-2ggplot2-polish.html#sec-ggplot2-split). Monthly series are in [Chapter 49](https://anilyayavar.github.io/new-book/12-9ts.html), and duplicates in [Chapter 34](https://anilyayavar.github.io/new-book/20-duplicates.html). In this book, counting flags is in @sec-payroll-risk and @sec-tax-risk, and a whole scheme, with its grievances, is audited in @sec-ssyaudit.
+
+## Try it yourself {#sec-delay-exercises}
+
+These exercises use the objects of this chapter. Try each before opening the solution.
+
+1.  **Pension cases alone.** Fit a Kaplan-Meier curve for pension sanctions only. What is the median time to disposal, and what share is decided within 30 days?
+
+    ::: {.callout-tip collapse="true"}
+    ## Solution
+    ```{r}
+    ex_pen <- survfit(Surv(days, event) ~ 1, data = filter(cases, service == "Pension sanction"))
+    ex_pen
+    summary(ex_pen, times = 30)
+    ```
+    The median is `r summary(ex_pen)$table[["median"]]` days, and `r pct(1 - summary(ex_pen, times = 30)$surv)`% of pension cases are decided within 30 days. Pension cases are slower everywhere. Some of that is genuine, since they need service records, so read a sample of files before calling it a delay.
+    :::
+
+2.  **A different limit.** Suppose the limit for caste certificates were 15 days. What share of caste certificates is decided within it, in each district?
+
+    ::: {.callout-tip collapse="true"}
+    ## Solution
+    ```{r}
+    ex_caste <- survfit(Surv(days, event) ~ district,
+                        data = filter(cases, service == "Caste certificate"))
+    ex_s <- summary(ex_caste, times = 15)
+    ex_15 <- tibble(district = str_remove(ex_s$strata, "district="),
+                    within_15_pct = round(100 * (1 - ex_s$surv)))
+    ex_15
+    ```
+    The shares range from `r min(ex_15$within_15_pct)`% to `r max(ex_15$within_15_pct)`%, with Dhaulagarh lowest at `r ex_15$within_15_pct[ex_15$district == "Dhaulagarh"]`%. A limit is a choice of the law, and the analysis must use the limit that applies to each service.
+    :::
+
+3.  **The admission season.** Compare caste certificates received in June and July with those received in other months. Use a log-rank test and the medians.
+
+    ::: {.callout-tip collapse="true"}
+    ## Solution
+    ```{r}
+    ex_season <- filter(cases, service == "Caste certificate")
+    ex_sfit <- survfit(Surv(days, event) ~ season, data = ex_season)
+    ex_sfit
+    survdiff(Surv(days, event) ~ season, data = ex_season)
+    ```
+    ```{r}
+    #| include: false
+    ex_st <- summary(ex_sfit)$table
+    ```
+    The median rises from `r ex_st["season=Other months", "median"]` days in other months to `r ex_st["season=June-July", "median"]` days in June and July. The seasonal surge is predictable. An office that knows students apply in June can plan staff for it, so a seasonal backlog is still worth a recommendation.
+    :::
+
+4.  **The portal's view of every office.** For each office, compute the share decided within 30 days if transfers are counted as disposals, as the portal does. Which office gains most compared with the audit's figure in `office_table`?
+
+    ::: {.callout-tip collapse="true"}
+    ## Solution
+    ```{r}
+    ex_portal <- survfit(Surv(days, status != "pending") ~ office, data = cases)
+    ex_p <- summary(ex_portal, times = 30)
+    ex_gain <- tibble(office = str_remove(ex_p$strata, "office="),
+                      portal_pct = round(100 * (1 - ex_p$surv))) |>
+      left_join(office_table |> select(office, within_30_pct), by = "office") |>
+      mutate(gain = portal_pct - within_30_pct) |>
+      arrange(desc(gain))
+    head(ex_gain, 3)
+    ```
+    `r ex_gain$office[1]` gains `r ex_gain$gain[1]` percentage points, far more than any other office, whose gains are at most `r ex_gain$gain[2]`. How the event is defined can change an office's result more than anything the office does.
+    :::
+
+5.  **Old pending cases by office.** List the offices with pending cases older than 180 days, with the count and the age of the oldest.
+
+    ::: {.callout-tip collapse="true"}
+    ## Solution
+    ```{r}
+    ex_old <- pending |>
+      filter(days > 180) |>
+      summarise(cases = n(), oldest_days = max(days), .by = office) |>
+      arrange(desc(cases))
+    ex_old
+    ```
+    `r Num(nrow(ex_old))` offices hold such cases. The two Dhaulagarh offices hold `r sum(ex_old$cases[str_detect(ex_old$office, "Dhaulagarh")])` of the `r sum(ex_old$cases)`. The other `r num(sum(ex_old$cases[!str_detect(ex_old$office, "Dhaulagarh")]))` are spread over `r num(sum(!str_detect(ex_old$office, "Dhaulagarh")))` offices, and are likely the genuinely complex cases. These lists are where file reviews start.
+    :::
+
+## Summary of functions used
+
+| Function | Package | What it does |
+|-----------------------|----------------|--------------------------------|
+| `Surv()` | survival | Pairs the days taken with whether the case was decided or censored |
+| `survfit()` | survival | Fits a Kaplan-Meier curve, for all cases or for each group |
+| `summary()` with `times` | survival | Reads the share still pending, and the median with its interval, from a curve |
+| `survdiff()` | survival | Log-rank test of whether curves differ by more than chance |
+| `coxph()` | survival | Cox model of what drives delay, giving hazard ratios |
+| `cox.zph()` | survival | Checks the proportional hazards assumption of a Cox model |
+| `strata()` | survival | Fits a Cox model separately within each group |
+| `tidy()` | broom | Turns a curve or a model into a table, ready for ggplot2 |
+| `geom_step()` | ggplot2 | Draws a Kaplan-Meier curve and its confidence limits as a staircase |
+| `geom_histogram()` with `binwidth = 1` | ggplot2 | Shows decisions and transfers by day, to reveal bunching |
+| `cut()` | base R | Puts the age of pending cases into bands |
+| `ceiling_date()`, `month()` | lubridate | Finds the last day of a month, and the month of receipt |
+| `inner_join()` of a table with itself | dplyr | Links a reopened application to the one it continues |
+| `between()` | dplyr | Picks decisions within a range of days |
+| `map_int()` | purrr | Counts the pending cases at each month end |
+| `setdiff()` | base R | Finds missing application numbers |
+
+: Functions used in this chapter {#tbl-delayfunctions}

@@ -2,7 +2,7 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://anilyayavar.github.io/book2/index.html</loc>
-    <lastmod>2026-10-23T09:07:00.584Z</lastmod>
+    <lastmod>2026-10-23T10:08:07.098Z</lastmod>
   </url>
   <url>
     <loc>https://anilyayavar.github.io/book2/index-about-author.html</loc>
@@ -54,7 +54,11 @@
   </url>
   <url>
     <loc>https://anilyayavar.github.io/book2/part4-schemes.html</loc>
-    <lastmod>2026-10-23T08:19:39.962Z</lastmod>
+    <lastmod>2026-10-23T10:08:07.098Z</lastmod>
+  </url>
+  <url>
+    <loc>https://anilyayavar.github.io/book2/25-delays.html</loc>
+    <lastmod>2026-10-23T10:06:55.657Z</lastmod>
   </url>
   <url>
     <loc>https://anilyayavar.github.io/book2/23-health-scheme.html</loc>
@@ -62,14 +66,14 @@
   </url>
   <url>
     <loc>https://anilyayavar.github.io/book2/audit-questions.html</loc>
-    <lastmod>2026-10-23T08:24:23.686Z</lastmod>
+    <lastmod>2026-10-23T10:08:07.100Z</lastmod>
   </url>
   <url>
     <loc>https://anilyayavar.github.io/book2/98-datasets.html</loc>
-    <lastmod>2026-10-23T08:19:39.959Z</lastmod>
+    <lastmod>2026-10-23T10:08:07.099Z</lastmod>
   </url>
   <url>
     <loc>https://anilyayavar.github.io/book2/99-packages.html</loc>
-    <lastmod>2026-10-23T08:19:39.959Z</lastmod>
+    <lastmod>2026-10-23T10:08:07.099Z</lastmod>
   </url>
 </urlset>

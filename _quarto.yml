@@ -38,6 +38,7 @@ book:
         - 22e-revenue.qmd
     - part: part4-schemes.qmd
       chapters:
+        - 25-delays.qmd
         - 23-health-scheme.qmd
   appendices:
     - audit-questions.qmd

@@ -400,7 +400,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
             <a href="./part4-schemes.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Part IV. Schemes</span></a>
+ <span class="menu-text">Part IV. Schemes and Services</span></a>
           <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
@@ -408,8 +408,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth1 show">
 <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="./25-delays.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">9</span>&nbsp; <span class="chapter-title">Delays and Pendency</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="./23-health-scheme.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">9</span>&nbsp; <span class="chapter-title">Auditing a Health Insurance Scheme</span></span></a>
+ <span class="menu-text"><span class="chapter-number">10</span>&nbsp; <span class="chapter-title">Auditing a Health Insurance Scheme</span></span></a>
   </div>
 </li>
       </ul>
@@ -538,7 +544,14 @@ Table&nbsp;C.1: Packages used in each chapter
 <td>Matching addresses, and finding dealers trading in a circle</td>
 </tr>
 <tr class="odd">
-<td><a href="23-health-scheme.html" class="quarto-xref"><span>Chapter 9</span></a></td>
+<td><a href="25-delays.html" class="quarto-xref"><span>Chapter 9</span></a></td>
+<td>
+<code>survival</code>, <code>broom</code>
+</td>
+<td>Survival curves, the log-rank test and Cox models, and tidy tables of them</td>
+</tr>
+<tr class="even">
+<td><a href="23-health-scheme.html" class="quarto-xref"><span>Chapter 10</span></a></td>
 <td>
 <code>arules</code>, <code>sf</code>, <code>tidytext</code>, <code>knitr</code>
 </td>
@@ -553,7 +566,7 @@ Table&nbsp;C.1: Packages used in each chapter
 <span class="header-section-number">C.1</span> Installing the packages</h2>
 <p>The command below installs all of them. It needs an internet connection, and may take a while the first time.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html">install.packages</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"tidyverse"</span>, <span class="st">"stringdist"</span>, <span class="st">"knitr"</span>, <span class="st">"ranger"</span>, <span class="st">"igraph"</span>,</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html">install.packages</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"tidyverse"</span>, <span class="st">"stringdist"</span>, <span class="st">"knitr"</span>, <span class="st">"ranger"</span>, <span class="st">"igraph"</span>, <span class="st">"broom"</span>,</span>
 <span>                   <span class="st">"arules"</span>, <span class="st">"sf"</span>, <span class="st">"tidytext"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>If your office network blocks downloads, see the note on installing packages in <a href="https://anilyayavar.github.io/new-book/99-packages.html"><em>R for Audit Analytics</em></a>. The packages of that book cover all of these.</p>

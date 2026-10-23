@@ -13,7 +13,7 @@ A companion to [*R for Audit Analytics*](https://anilyayavar.github.io/new-book/
 1. **Accounts**. Journal entry testing, and reconciliation of records that should agree.
 2. **Procurement and Payments**. Red flags in tendering, screens and models for bid rigging, and payables from the vendor master to the payment.
 3. **Pay and Revenue**. Payroll and pensions, and revenue and tax.
-4. **Schemes**. A health insurance scheme audited from start to end.
+4. **Schemes and Services**. Delays and pendency in public services, and a health insurance scheme audited from start to end.
 
 An **Audit Question Finder** in the appendices lists common audit questions and the section that answers each one.
 

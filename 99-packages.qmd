@@ -17,6 +17,7 @@ Every chapter uses the tidyverse. A few chapters need one or two more packages.
 | @sec-payables | `stringdist` | Matching vendor names |
 | @sec-payroll | `stringdist` | Matching names across two lists |
 | @sec-revenue | `stringdist`, `igraph` | Matching addresses, and finding dealers trading in a circle |
+| @sec-delays | `survival`, `broom` | Survival curves, the log-rank test and Cox models, and tidy tables of them |
 | @sec-ssyaudit | `arules`, `sf`, `tidytext`, `knitr` | Association rules, maps and text |
 
 : Packages used in each chapter {#tbl-packages}
@@ -27,7 +28,7 @@ The command below installs all of them. It needs an internet connection, and may
 
 ```{r}
 #| eval: false
-install.packages(c("tidyverse", "stringdist", "knitr", "ranger", "igraph",
+install.packages(c("tidyverse", "stringdist", "knitr", "ranger", "igraph", "broom",
                    "arules", "sf", "tidytext"))
 ```
 
