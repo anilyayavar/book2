@@ -1,0 +1,137 @@
+# Audit Question Finder {#sec-finder}
+
+Start here when you have an audit question and want to know where the book answers it. Links with a small arrow leave this book. Here they open *R for Audit Analytics*, where the method is taught. The questions are grouped by audit area. Each row names the technique and the section that shows it at work.
+
+Type a word in the box to narrow the list, for example *duplicate*, *vendor*, *pension* or *refund*.
+
+```{=html}
+<div class="finder-search">
+  <input type="search" id="finder-filter" placeholder="Filter the questions" aria-label="Filter the audit questions">
+  <span id="finder-count" aria-live="polite"></span>
+</div>
+```
+
+::: {#finder}
+
+## Accounts and journal entries {.unnumbered}
+
+| Audit question | Technique | Where |
+|------------------------------------------|----------------------|-----------------|
+| Is the ledger extract I received complete? | Balance check, reconciling to the trial balance, gaps in entry numbers | @sec-jet-complete |
+| Which entries were recorded after the books were closed? | Entry time stamp against posting date | @sec-jet-late |
+| Who is posting journal entries who should not be? | User master, segregation of duties | @sec-jet-users, @sec-jet-user |
+| Which entries were made at night, at weekends or on holidays? | Hour, day of the week and a holiday list | @sec-jet-hours |
+| Were any entries approved by the person who made them? | Maker against approver | @sec-jet-self |
+| Is someone keeping entries just below an approval limit? | A band below the limit, counted by user | @sec-jet-limit |
+| Do the amounts of manual entries follow Benford's Law, and whose entries do not? | First-two digits, overall and by user | @sec-jet-benford |
+| Which entries were posted twice, or reversed soon after the year end? | Matching entry signatures | @sec-jet-dup, @sec-jet-reversed |
+| Which accounts are combined in unusual ways? | Counting debit and credit account pairs | @sec-jet-pairs |
+| Was revenue boosted at the year end? | Post-closing entries to revenue, followed to their reversal | @sec-jet-revenue |
+| How do I choose which journal entries to examine? | A weighted risk score plus a random sample | @sec-jet-score, @sec-jet-select |
+| Do the cash book and the bank statement agree, and what explains the difference? | Step-by-step matching with exact, tolerance and window joins | @sec-recon-steps, @sec-recon-statement |
+| How do I match records that have no common key or are written differently? | Cleaned references, inequality joins, string distance | @sec-recon-prepare, @sec-recon-window, @sec-recon-fuzzy |
+| Does one bank credit settle several bills? | Small combinations within a party and a date window | @sec-recon-combn |
+| Which reconciling items are old, stale or permanent? | Classifying and ageing what is left | @sec-recon-left |
+| Did the unpresented cheques and deposits in transit really clear? | Matching against the next month's statement | @sec-recon-subsequent |
+| Is a difference a transposition error? | A difference divisible by 9 | @sec-recon-transpose |
+| Was input tax credit claimed on invoices the suppliers never reported? | Purchase register against GSTR-2B, invoice by invoice | @sec-recon-itc |
+| Do the department's figures agree with the treasury's? | Totals by month and head, compared | @sec-recon-treasury |
+
+## Payments and procurement {.unnumbered}
+
+| Audit question | Technique | Where |
+|------------------------------------------|----------------------|-----------------|
+| Was any vendor's bank account changed just before a payment, or changed back after? | The change log, and payments in a window after a change | @sec-pay-bankchange, @sec-pay-case-bank |
+| Which vendors were paid soon after registration, or woke up after years? | Days from creation to first payment, and earlier years' payments | @sec-pay-newvendor, @sec-pay-dormant |
+| Is a vendor registered twice, or linked to an employee? | Same PAN or bank account, and the employee master | @sec-pay-dupvendor, @sec-pay-empvendor |
+| Are vendor PANs and GSTINs valid, and do unregistered vendors get large payments? | Format and check digit, and totals of vendors with no GSTIN | @sec-pay-ids, @sec-pay-nogstin |
+| Do order, goods receipt and invoice agree before payment? | Three-way match | @sec-pay-threeway |
+| Were goods paid for before they arrived, or paid in full when only part arrived? | Payment against receipt dates, and value received | @sec-pay-before, @sec-pay-part |
+| Is one office paying more than others for the same item? | Ratio to the median price of the same item, and the excess paid | @sec-pay-bench, @sec-pay-excess, @sec-pay-case-price |
+| Which vendors should I examine first? | A count of flags per vendor | @sec-pay-risk |
+| Are some firms taking turns to win our works tenders? | Repeated line-ups, a reshuffling test of the order of wins | @sec-bidrig-cobid, @sec-bidrig-rotation |
+| Do losing bids sit a steady margin above the winner? | Cover margin screen | @sec-bidrig-margin |
+| Do the same firms bid higher when no outsider competes? | Inside and outside comparison | @sec-bidrig-inout |
+| Did prices fall when a new firm entered a district? | Bid to estimate ratio, before and after | @sec-bidrig-ratio |
+| Are two competing bidders really one business? | Links in the contractor register | @sec-bidrig-links, @sec-bidrig-phantom |
+| Did two bidders quote identical unusual rates? | Comparing item rates in a bill of quantities | @sec-bidrig-boq |
+| Was competition restricted in a department's tenders? | Process red flags, single bids against similar tenders | @sec-tenderflags-notice, @sec-tenderflags-single |
+| Were works split to avoid an open tender? | Bunching below the limit, tenders issued together | @sec-tenderflags-split |
+| Does one firm win most of a department's contracts? | Winner's share of the buyer's contracts | @sec-tenderflags-share |
+| Were calls cancelled until a particular firm won? | Re-tendering against the first call's lowest bidder | @sec-tenderflags-after |
+| Were contracts won low and raised later by variations? | Award and final value against the estimate | @sec-tenderflags-variation |
+| Which tenders, departments and firms should be examined first? | A simple corruption risk index | @sec-tenderflags-cri |
+| Do the bids within a large tender look arranged? | Shape screens, for tenders with four or more bids | @sec-bidshape-screens |
+| Can a cartel be seen when genuine outsiders also bid? | Screens on subgroups of three or four bids | @sec-bidshape-subgroups |
+| Can past proved cases train a model to rank tenders? | Random forest on screens, with its false alarms and misses | @sec-bidshape-forest, @sec-bidshape-ranking |
+
+## Payroll, pensions and staff {.unnumbered}
+
+| Audit question | Technique | Where |
+|------------------------------------------|----------------------|-----------------|
+| Was anyone paid before joining or after leaving? | Payroll months against dates of joining and leaving | @sec-payroll-service |
+| Was pay raised without an order, or two increments given in a year? | Pay rises matched to the change log | @sec-payroll-rise, @sec-payroll-increment |
+| Was an employee's bank account changed around a one-time payment, or arrears paid twice? | Reversed changes, and duplicate arrears | @sec-payroll-bank, @sec-payroll-arrears |
+| Does an office pay more people than its sanctioned posts? | Monthly headcount against sanctioned strength | @sec-payroll-strength |
+| Who is paid but never attends? | Payroll against attendance | @sec-payroll-attendance, @sec-payroll-case-ghost |
+| Are pensions paid without a valid life certificate, or to very old pensioners unverified? | The latest certificate before each payment | @sec-payroll-lifecert, @sec-payroll-age, @sec-payroll-case-lifecert |
+| Are service and family pension both paid after a death? | Family pension linked to the pension it follows | @sec-payroll-family |
+| Was commutation paid twice, or a pension fixed too high? | Duplicate check and a simple illustrative rule | @sec-payroll-commutation, @sec-payroll-rule |
+| Does a service pensioner also draw an old age pension? | Blocking and string similarity across two lists | @sec-payroll-twolists |
+| Which employees and pensioners carry the most flags? | Counting flags per person | @sec-payroll-risk |
+
+## Welfare schemes and beneficiaries {.unnumbered}
+
+| Audit question | Technique | Where |
+|------------------------------------------|----------------------|-----------------|
+| How do I audit a health insurance scheme from start to end? | Data checks, profiling and several lines of evidence | @sec-ssyaudit |
+| Which hospitals are flagged by several independent sources? | A triangulation table | @sec-ssyaudit-triangulate |
+| Are young women billed for hysterectomy? | Shares by hospital | @sec-ssyaudit-hyst |
+| Is the same patient admitted twice at once, or a man billed for a delivery? | Consistency checks on claims | @sec-ssyaudit-reliability |
+| How much money is at stake in the flagged claims? | Inadmissible, at risk and exposure | @sec-ssyaudit-value |
+| How do I write a draft observation from data leads? | Facts, criteria, cause, effect and recommendation | @sec-ssyaudit-observation |
+
+## Revenue, tax and treasury {.unnumbered}
+
+| Audit question | Technique | Where |
+|------------------------------------------|----------------------|-----------------|
+| Which dealers stopped filing, or file nil returns, while still trading? | Returns expected against received, with movement records | @sec-tax-stopfiling, @sec-tax-nil, @sec-tax-cancelled |
+| Does a dealer declare less than its goods moved or its buyers report? | Comparison with third-party data | @sec-tax-movement, @sec-tax-buyers, @sec-tax-case-hiding |
+| Whose tax fell while the trade grew? | Ratio of halves against the trade | @sec-tax-trend |
+| Was tax charged at the rate in force on the date of supply? | Rolling join on a rate master | @sec-tax-rates |
+| Do turnovers bunch just below a threshold, or is a concession claimed by those not eligible? | Histogram, filter | @sec-tax-bunching, @sec-tax-ineligible |
+| Were refunds paid to new or linked dealers, too fast, or above the tax paid? | Refund tests | @sec-tax-refunds, @sec-tax-case-refunds |
+| Are shell dealers trading in a circle? | Shared identifiers, string similarity, strongly connected components | @sec-tax-shell |
+| Was stamp duty short-levied on property? | Guideline value, duplicates, regex | @sec-tax-stamp |
+| Which demands are old and near the time limit for recovery? | Ageing | @sec-tax-demands |
+| Which dealers carry the most flags? | Counting flags per dealer | @sec-tax-risk |
+
+:::
+
+```{=html}
+<script>
+(function () {
+  var box = document.getElementById("finder-filter");
+  var count = document.getElementById("finder-count");
+  var root = document.getElementById("finder");
+  if (!box || !root) return;
+  var rows = root.querySelectorAll("tbody tr");
+  function apply() {
+    var q = box.value.trim().toLowerCase();
+    var shown = 0;
+    rows.forEach(function (r) {
+      var hit = !q || r.textContent.toLowerCase().indexOf(q) !== -1;
+      r.style.display = hit ? "" : "none";
+      if (hit) shown++;
+    });
+    root.querySelectorAll("section").forEach(function (s) {
+      var any = Array.prototype.some.call(s.querySelectorAll("tbody tr"),
+        function (r) { return r.style.display !== "none"; });
+      s.style.display = any ? "" : "none";
+    });
+    count.textContent = q ? shown + " of " + rows.length + " questions" : "";
+  }
+  box.addEventListener("input", apply);
+})();
+</script>
+```

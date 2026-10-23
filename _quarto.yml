@@ -1,0 +1,70 @@
+project:
+  type: book
+  output-dir: docs
+  post-render:
+    - tools/add-alt-text.R
+
+book:
+  title: "Applied Audit Analytics with R"
+  author: "Anil Goyal"
+  date: "2026-10-23"
+  site-url: https://anilyayavar.github.io/applied-audit-analytics/
+  repo-url: https://github.com/anilyayavar/applied-audit-analytics
+  repo-branch: master
+  repo-actions: [edit, issue]
+  cover-image: images/cover.jpg
+  cover-image-alt: "Cover of Applied Audit Analytics with R"
+  subtitle: "Whole audit areas, from data to findings"
+  description: "A companion to R for Audit Analytics. Journal entries, reconciliation, tenders and bid rigging, payables, payroll and pensions, revenue and tax, and a health insurance scheme, each audited from data to findings with R, with Indian examples and simulated data."
+  license: "CC BY-NC"
+  page-footer:
+    center: "Built with [R](https://www.r-project.org) and [Quarto](https://quarto.org)"
+  chapters:
+    - index.qmd
+    - index-about-author.qmd
+    - part: part1-accounts.qmd
+      chapters:
+        - 22-journal-entries.qmd
+        - 22b-reconciliation.qmd
+    - part: part2-procurement.qmd
+      chapters:
+        - 21c-tender-flags.qmd
+        - 21c-bid-rigging.qmd
+        - 21d-bid-shapes.qmd
+        - 22c-payables.qmd
+    - part: part3-pay-revenue.qmd
+      chapters:
+        - 22d-payroll.qmd
+        - 22e-revenue.qmd
+    - part: part4-schemes.qmd
+      chapters:
+        - 23-health-scheme.qmd
+  appendices:
+    - audit-questions.qmd
+    - 98-datasets.qmd
+    - 99-packages.qmd
+
+execute:
+  freeze: auto
+
+date-modified: today
+
+language:
+  title-block-published: "First published"
+  title-block-modified: "Last updated"
+
+format:
+  html:
+    date-format: "D MMMM YYYY"
+    theme:
+      light: cosmo
+      dark: darkly
+    css: style.css
+    code-link: true
+    toc-depth: 3
+    fig-align: center
+    link-external-icon: true
+    link-external-newwindow: false
+    link-external-filter: '^(?:http:|https:)\/\/anilyayavar\.github\.io\/applied-audit-analytics\/'
+
+editor: source

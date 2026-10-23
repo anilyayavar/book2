@@ -1,0 +1,11 @@
+# Part IV. Schemes {.unnumbered}
+
+The book ends with a whole scheme audited from start to end. The chapter gathers what the first book found about one health insurance scheme, and builds a case from several independent sources.
+
+:::: {.chapter-cards}
+::: {.chapter-card}
+@sec-ssyaudit
+
+One health insurance scheme audited from start to end, bringing claims, grievances, feedback, maps and inspections together to build a case.
+:::
+::::

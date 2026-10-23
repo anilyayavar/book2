@@ -1,0 +1,17 @@
+# Part III. Pay and Revenue {.unnumbered}
+
+Pay and pensions are usually a department's largest expenditure, and pensions are paid for decades. The payroll chapter tests both against the records that should support them. The revenue chapter then turns from money spent to money that should have been collected.
+
+:::: {.chapter-cards}
+::: {.chapter-card}
+@sec-payroll
+
+A department's payroll and pensions tested against the change log, sanctioned posts, attendance and life certificates, with a risk view of each person.
+:::
+
+::: {.chapter-card}
+@sec-revenue
+
+A State tax on goods and services tested against movement records and buyers' reports, with rates, thresholds, refunds, shell dealers, stamp duty and old demands.
+:::
+::::

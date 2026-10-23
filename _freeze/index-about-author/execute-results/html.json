@@ -1,0 +1,15 @@
+{
+  "hash": "3aa3afa6f4e017835742607252c66c3a",
+  "result": {
+    "engine": "knitr",
+    "markdown": "\n\n# About the Author {.unnumbered}\n\nAnil Goyal has worked in the Indian Audit and Accounts Department since 1998. He is a data analytics enthusiast, with a passion for learning and applying programming languages and other tools, such as R and Tableau, to solve data-related problems in audit.\n\nAnil taught himself R, and has used it in a variety of data analytics projects and audits. He enjoys answering questions from users of R on [Stack Overflow](https://stackoverflow.com/users/2884859/anilgoyal).\n\nHe holds a post-graduate degree in Mathematics from the University of Rajasthan, Jaipur, received in 1998. He is also the author of [*R for Audit Analytics*](https://anilyayavar.github.io/new-book/), to which this book is a companion.\n\nWhen not working with data, Anil enjoys [photographing birds](https://www.flickr.com/search/?user_id=121352773%40N04&view_all=1&text=birds) and [nature](https://www.flickr.com/search/?user_id=121352773%40N04&view_all=1&text=landscape), reading, and watching movies.\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

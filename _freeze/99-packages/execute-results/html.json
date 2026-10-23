@@ -1,0 +1,15 @@
+{
+  "hash": "664b74fd1e50adac6db5a1a1a79c1100",
+  "result": {
+    "engine": "knitr",
+    "markdown": "\n\n# R Packages Used in This Book {#sec-packages}\n\nEvery chapter uses the tidyverse. A few chapters need one or two more packages.\n\n| Chapter | Packages besides the tidyverse | Used for |\n|----------------|--------------------------|--------------------------------------|\n| @sec-jet | None | |\n| @sec-recon | `stringdist`, `knitr` | Matching narrations, and tables |\n| @sec-tenderflags | None | |\n| @sec-bidrig | None | |\n| @sec-bidshape | `ranger` | A random forest for bid rigging |\n| @sec-payables | `stringdist` | Matching vendor names |\n| @sec-payroll | `stringdist` | Matching names across two lists |\n| @sec-revenue | `stringdist`, `igraph` | Matching addresses, and finding dealers trading in a circle |\n| @sec-ssyaudit | `arules`, `sf`, `tidytext`, `knitr` | Association rules, maps and text |\n\n: Packages used in each chapter {#tbl-packages}\n\n## Installing the packages {#sec-packages-install}\n\nThe command below installs all of them. It needs an internet connection, and may take a while the first time.\n\n\n::: {.cell}\n\n```{.r .cell-code}\ninstall.packages(c(\"tidyverse\", \"stringdist\", \"knitr\", \"ranger\", \"igraph\",\n                   \"arules\", \"sf\", \"tidytext\"))\n```\n:::\n\n\nIf your office network blocks downloads, see the note on installing packages in [*R for Audit Analytics*](https://anilyayavar.github.io/new-book/99-packages.html). The packages of that book cover all of these.\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

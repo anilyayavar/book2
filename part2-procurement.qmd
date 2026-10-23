@@ -1,0 +1,31 @@
+# Part II. Procurement and Payments {.unnumbered}
+
+Tenders are where a great deal of public money is spent, and where competition can be quietly restricted or rigged. The first chapter of this part checks the tendering process itself, with red flags that work for every tender. The next two look for bid rigging, where firms that should compete secretly decide who will win.
+
+After the award comes payment. The payables chapter follows a department's purchases from the vendor master to the payment.
+
+:::: {.chapter-cards}
+::: {.chapter-card}
+@sec-tenderflags
+
+Red flags in the tendering process, combined into a simple risk index that works for every tender.
+:::
+
+::: {.chapter-card}
+@sec-bidrig
+
+Patterns across many tenders that reveal bid rigging, even when each tender gets only two or three bids.
+:::
+
+::: {.chapter-card}
+@sec-bidshape
+
+The shape of bids in larger tenders, what research shows, and a machine learning model used honestly.
+:::
+
+::: {.chapter-card}
+@sec-payables
+
+A department's payables tested from vendor master to payment, with the three-way match, price benchmarking and a risk view of each vendor.
+:::
+::::

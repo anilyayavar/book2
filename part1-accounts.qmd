@@ -1,0 +1,17 @@
+# Part I. Accounts {.unnumbered}
+
+The audit of accounts begins with the books themselves. Journal entries are where management can override controls, and auditing standards on fraud require them to be tested. The first chapter tests every entry in a general ledger. The second reconciles records that should agree, such as the cash book and the bank statement, and checks claims against independent records.
+
+:::: {.chapter-cards}
+::: {.chapter-card}
+@sec-jet
+
+Every journal entry tested for the signs of management override, combined into a risk score for selecting entries.
+:::
+
+::: {.chapter-card}
+@sec-recon
+
+Matching a cash book with the bank statement, and claims with independent records, step by step even when there is no common key.
+:::
+::::

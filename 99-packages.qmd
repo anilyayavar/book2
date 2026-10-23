@@ -1,0 +1,34 @@
+```{r}
+#| include: false
+source("_common.R")
+```
+
+# R Packages Used in This Book {#sec-packages}
+
+Every chapter uses the tidyverse. A few chapters need one or two more packages.
+
+| Chapter | Packages besides the tidyverse | Used for |
+|----------------|--------------------------|--------------------------------------|
+| @sec-jet | None | |
+| @sec-recon | `stringdist`, `knitr` | Matching narrations, and tables |
+| @sec-tenderflags | None | |
+| @sec-bidrig | None | |
+| @sec-bidshape | `ranger` | A random forest for bid rigging |
+| @sec-payables | `stringdist` | Matching vendor names |
+| @sec-payroll | `stringdist` | Matching names across two lists |
+| @sec-revenue | `stringdist`, `igraph` | Matching addresses, and finding dealers trading in a circle |
+| @sec-ssyaudit | `arules`, `sf`, `tidytext`, `knitr` | Association rules, maps and text |
+
+: Packages used in each chapter {#tbl-packages}
+
+## Installing the packages {#sec-packages-install}
+
+The command below installs all of them. It needs an internet connection, and may take a while the first time.
+
+```{r}
+#| eval: false
+install.packages(c("tidyverse", "stringdist", "knitr", "ranger", "igraph",
+                   "arules", "sf", "tidytext"))
+```
+
+If your office network blocks downloads, see the note on installing packages in [*R for Audit Analytics*](https://anilyayavar.github.io/new-book/99-packages.html). The packages of that book cover all of these.

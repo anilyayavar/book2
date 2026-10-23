@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1410" height="2250" viewBox="0 0 1410 2250">
+  <defs>
+    <style>
+      .t { font-family: 'Montserrat', 'Segoe UI', Arial, sans-serif; }
+    </style>
+    <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#c9ccd1"/>
+      <stop offset="1" stop-color="#8d939b"/>
+    </linearGradient>
+  </defs>
+
+  <!-- page and dark band -->
+  <rect width="1410" height="2250" fill="#fdfdfb"/>
+  <rect x="932" y="0" width="478" height="2250" fill="#262626"/>
+
+  <!-- top tag -->
+  <rect x="705" y="50" width="12" height="118" fill="#f26b0f"/>
+  <rect x="728" y="50" width="12" height="118" fill="#f26b0f"/>
+  <rect x="751" y="50" width="12" height="118" fill="#f26b0f"/>
+  <rect x="776" y="50" width="634" height="118" fill="#f26b0f"/>
+  <text x="1056" y="133" text-anchor="middle" class="t" font-size="50" font-weight="700" fill="#1d1d1d">Audit Analytics</text>
+
+  <!-- title -->
+  <text x="78" y="340" class="t" font-size="112" font-weight="800" fill="#262626">APPLIED</text>
+  <text x="78" y="470" class="t" font-size="112" font-weight="800" fill="#262626">AUDIT</text>
+  <text x="78" y="600" class="t" font-size="112" font-weight="800" fill="#262626">ANALYTICS</text>
+  <text x="80" y="720" class="t" font-size="84" font-weight="700" fill="#e0640f">with R</text>
+  <text x="84" y="815" class="t" font-size="40" fill="#262626">Whole audit areas, from data to findings</text>
+
+  <!-- illustration panel -->
+  <rect x="54" y="880" width="920" height="600" fill="#4f7391"/>
+  <!-- ledger sheet -->
+  <g transform="translate(110,940)">
+    <rect width="300" height="380" rx="8" fill="#f4f1ea"/>
+    <rect x="0" y="0" width="300" height="56" rx="8" fill="#e0640f"/>
+    <text x="150" y="40" text-anchor="middle" class="t" font-size="30" font-weight="700" fill="#fff">LEDGER</text>
+    <g fill="#9aa6b1">
+      <rect x="24" y="86" width="150" height="12"/><rect x="200" y="86" width="76" height="12"/>
+      <rect x="24" y="124" width="120" height="12"/><rect x="200" y="124" width="76" height="12"/>
+      <rect x="24" y="162" width="160" height="12"/><rect x="200" y="162" width="76" height="12"/>
+      <rect x="24" y="200" width="110" height="12"/><rect x="200" y="200" width="76" height="12" fill="#e0640f"/>
+      <rect x="24" y="238" width="140" height="12"/><rect x="200" y="238" width="76" height="12"/>
+      <rect x="24" y="276" width="130" height="12"/><rect x="200" y="276" width="76" height="12"/>
+      <rect x="24" y="314" width="150" height="12"/><rect x="200" y="314" width="76" height="12"/>
+    </g>
+  </g>
+  <!-- bar chart -->
+  <g transform="translate(460,960)">
+    <rect width="440" height="250" rx="8" fill="#f4f1ea"/>
+    <g fill="#4f7391">
+      <rect x="40" y="150" width="44" height="70"/>
+      <rect x="104" y="120" width="44" height="100"/>
+      <rect x="168" y="135" width="44" height="85"/>
+      <rect x="232" y="40" width="44" height="180" fill="#e0640f"/>
+      <rect x="296" y="110" width="44" height="110"/>
+      <rect x="360" y="140" width="44" height="80"/>
+    </g>
+    <rect x="30" y="222" width="384" height="4" fill="#262626"/>
+  </g>
+  <!-- network -->
+  <g transform="translate(470,1250)" stroke="#f4f1ea" stroke-width="5">
+    <line x1="40" y1="120" x2="140" y2="40"/>
+    <line x1="140" y1="40" x2="250" y2="110"/>
+    <line x1="250" y1="110" x2="40" y2="120"/>
+    <line x1="250" y1="110" x2="360" y2="60"/>
+    <g stroke="none">
+      <circle cx="40" cy="120" r="24" fill="#e0640f"/>
+      <circle cx="140" cy="40" r="24" fill="#e0640f"/>
+      <circle cx="250" cy="110" r="24" fill="#e0640f"/>
+      <circle cx="360" cy="60" r="20" fill="#f4f1ea"/>
+    </g>
+  </g>
+  <!-- magnifier over ledger -->
+  <g transform="translate(330,1200)">
+    <circle r="78" fill="none" stroke="#262626" stroke-width="20"/>
+    <circle r="68" fill="#ffffff" fill-opacity="0.25"/>
+    <line x1="56" y1="56" x2="135" y2="135" stroke="#262626" stroke-width="30" stroke-linecap="round"/>
+  </g>
+
+  <!-- hexagon with R -->
+  <g transform="translate(915,1520)">
+    <polygon points="0,-470 407,-235 407,235 0,470 -407,235 -407,-235" fill="#262626"/>
+    <polygon points="0,-430 372,-215 372,215 0,430 -372,215 -372,-215" fill="#ffffff"/>
+    <polygon points="0,-360 312,-180 312,180 0,360 -312,180 -312,-180" fill="#f2f2f2" stroke="#1d1d1d" stroke-width="16"/>
+    <!-- orange accents -->
+    <polygon points="407,-235 452,-209 452,261 407,235" fill="#f26b0f"/>
+    <polygon points="0,470 452,261 452,300 0,509" fill="#f26b0f"/>
+    <rect x="200" y="-330" width="34" height="70" fill="#f26b0f" transform="rotate(30 217 -295)"/>
+    <rect x="270" y="-290" width="34" height="70" fill="#f26b0f" transform="rotate(30 287 -255)"/>
+    <rect x="-330" y="250" width="34" height="80" fill="#262626" transform="rotate(30 -313 290)"/>
+    <rect x="-262" y="290" width="34" height="80" fill="#262626" transform="rotate(30 -245 330)"/>
+    <!-- R mark -->
+    <ellipse cx="-10" cy="-20" rx="220" ry="140" fill="none" stroke="url(#ring)" stroke-width="46"/>
+    <text x="40" y="150" text-anchor="middle" class="t" font-size="330" font-weight="800" fill="#1f63c0">R</text>
+  </g>
+
+  <!-- author bar -->
+  <rect x="0" y="2050" width="690" height="140" fill="#262626"/>
+  <rect x="705" y="2050" width="12" height="140" fill="#262626"/>
+  <rect x="728" y="2050" width="12" height="140" fill="#262626"/>
+  <rect x="751" y="2050" width="12" height="140" fill="#262626"/>
+  <text x="345" y="2145" text-anchor="middle" class="t" font-size="76" fill="#ffffff">Anil Goyal</text>
+  <text x="1171" y="2140" text-anchor="middle" class="t" font-size="34" fill="#f4f1ea">A companion to</text>
+  <text x="1171" y="2185" text-anchor="middle" class="t" font-size="34" font-style="italic" fill="#f4f1ea">R for Audit Analytics</text>
+</svg>

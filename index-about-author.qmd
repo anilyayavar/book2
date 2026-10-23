@@ -1,0 +1,14 @@
+```{r}
+#| include: false
+source("_common.R")
+```
+
+# About the Author {.unnumbered}
+
+Anil Goyal has worked in the Indian Audit and Accounts Department since 1998. He is a data analytics enthusiast, with a passion for learning and applying programming languages and other tools, such as R and Tableau, to solve data-related problems in audit.
+
+Anil taught himself R, and has used it in a variety of data analytics projects and audits. He enjoys answering questions from users of R on [Stack Overflow](https://stackoverflow.com/users/2884859/anilgoyal).
+
+He holds a post-graduate degree in Mathematics from the University of Rajasthan, Jaipur, received in 1998. He is also the author of [*R for Audit Analytics*](https://anilyayavar.github.io/new-book/), to which this book is a companion.
+
+When not working with data, Anil enjoys [photographing birds](https://www.flickr.com/search/?user_id=121352773%40N04&view_all=1&text=birds) and [nature](https://www.flickr.com/search/?user_id=121352773%40N04&view_all=1&text=landscape), reading, and watching movies.
